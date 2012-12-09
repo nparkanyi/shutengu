@@ -271,3 +271,13 @@
 	"begin_code.h"
 	"close_code.h"
 
+1355082613 source:d:\github\shutengu\sdl2.cpp
+	<stdio.h>
+	<stdlib.h>
+	"SDL/SDL.h"
+
+1355082780 source:d:\github\shutengu\sdl1.cpp
+	<stdio.h>
+	<stdlib.h>
+	"SDL/SDL.h"
+
