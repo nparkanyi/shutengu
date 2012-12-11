@@ -4,6 +4,11 @@
 #include "SDL/SDL_image.h"
 #include "SDL/SDL_ttf.h"
 
+bool initSDL();
+bool loadContent();
+void printb(int x,int y,SDL_Surface *orig,SDL_Surface *target,SDL_Rect *clip);//blit with offsets
+void cleanup();
+
 const int SCREEN_WIDTH=640;				//define screen properties
 const int SCREEN_HEIGHT=480;
 const int SCREEN_BPP=32;
@@ -20,11 +25,6 @@ SDL_Surface *pRight=NULL;
 SDL_Event event;
 TTF_Font *font=NULL;					//the font to load
 SDL_Color textColor={255,255,255};		//font color
-
-bool initSDL();
-bool loadContent();
-void printb(int x,int y,SDL_Surface *orig,SDL_Surface *target,SDL_Rect *clip);//blit with offsets
-void cleanup();
 
 int main(int argc,char *args[]){
 	bool quit=false;
