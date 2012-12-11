@@ -5,7 +5,7 @@ Changes to Shutengu!!
 -----------------
 - Dramatically reduced total file size of music
 
-*Renamed and adjusted these loops:
+* Renamed and adjusted these loops:
   * Celebrate-bass to hey
   * Celebrate-Intro to arps
   * D12-Jagged to partybell
