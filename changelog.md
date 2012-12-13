@@ -4,6 +4,7 @@ Changes to Shutengu!!
 0.0.1 Dec 11 2012
 -----------------
 - Dramatically reduced total file size of music
+
 * Renamed and adjusted these loops:
   * Celebrate-bass to hey
   * Celebrate-Intro to arps
@@ -14,13 +15,13 @@ Changes to Shutengu!!
   * Elektroll-Cool to juice
   * Good Enough to gacd
   * The Count Dance to hahaha
+
 * Removed these loops:
-  *D12-menu
-  *D12-upbeat
-  *Elektroll-bouncy
-  *Elektroll-stupid
-  *Elektroll-weird
-* **Second update:** Normalized volume of all loops to be uniformly loud
+  * D12-menu
+  * D12-upbeat
+  * Elektroll-bouncy
+  * Elektroll-stupid
+  * Elektroll-weird
 
 0.0 Dec 8 2012
 --------------
