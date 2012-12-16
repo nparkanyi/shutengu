@@ -54,7 +54,7 @@ int main(int argc,char *args[]){
     clip[ 3 ].w = 100;
     clip[ 3 ].h = 100;
 
-	SDL_FillRect(screen,&screen->clip_rect,SDL_MapRGB(screen->format,0xFF,0xFF,0xFF));
+	SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
 
 	printb(0,0,dots,screen,&clip[0]);
 	printb(540,0,dots,screen,&clip[1]);
