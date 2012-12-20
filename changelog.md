@@ -1,6 +1,11 @@
 Changes to Shutengu!!
 =====================
 
+0.1 Dec 19 2012
+---------------
++ Added rudimentary motion
++ Added preliminary BulletML hooks
+
 0.0.1 Dec 11 2012
 -----------------
 - Dramatically reduced total file size of music
