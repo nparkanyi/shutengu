@@ -1,5 +1,4 @@
-/*This source code copyrighted by Lazy Foo' Productions (2004-2012)
-and may not be redistributed without written permission.*/
+//Jon Lui, Eugene Wang, Ms. Odecki, ICS 3U, 2012
 
 //The headers
 #include "SDL/SDL.h"
@@ -10,6 +9,7 @@ and may not be redistributed without written permission.*/
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int SCREEN_BPP = 32;
+int movespeed=10;
 
 //The frame rate
 const int FRAMES_PER_SECOND = 60;
@@ -160,52 +160,28 @@ void ship::handle_input()
     //If a key was pressed
     if( event.type == SDL_KEYDOWN )
     {
-    	//if (event.key.keysym.sym==SDLK_z)
-		//{
-			//Adjust the velocity
-			switch( event.key.keysym.sym )
-			{
-				case SDLK_UP: yVel -= SHIP_HEIGHT / 6; break;
-				case SDLK_DOWN: yVel += SHIP_HEIGHT / 6; break;
-				case SDLK_LEFT: xVel -= SHIP_WIDTH / 6; break;
-				case SDLK_RIGHT: xVel += SHIP_WIDTH / 6; break;
-			}
-		//}
-		/*else
+		switch( event.key.keysym.sym )
 		{
-			switch( event.key.keysym.sym )
-			{
-				case SDLK_UP: yVel -= DOT_HEIGHT / 2; break;
-				case SDLK_DOWN: yVel += DOT_HEIGHT / 2; break;
-				case SDLK_LEFT: xVel -= DOT_WIDTH / 2; break;
-				case SDLK_RIGHT: xVel += DOT_WIDTH / 2; break;
-			}
-		}*/
-    }
+			case SDLK_LSHIFT: movespeed=1; break;			//does not work properly
+			case SDLK_UP: yVel -=movespeed; break;
+			case SDLK_DOWN: yVel +=movespeed; break;
+			case SDLK_LEFT: xVel -=movespeed; break;
+			case SDLK_RIGHT: xVel +=movespeed; break;
+		}
+	}
     //If a key was released
-    else if( event.type == SDL_KEYUP )
+	if( event.type == SDL_KEYUP )
     {
-    	//if (event.key.keysym.sym==SDLK_z)
-		//{
-			//Adjust the velocity
-			switch( event.key.keysym.sym )
-			{
-				case SDLK_UP: yVel += SHIP_HEIGHT / 6; break;
-				case SDLK_DOWN: yVel -= SHIP_HEIGHT / 6; break;
-				case SDLK_LEFT: xVel += SHIP_WIDTH / 6; break;
-				case SDLK_RIGHT: xVel -= SHIP_WIDTH / 6; break;
-			}
-		//}
-		/*else
+		switch( event.key.keysym.sym )
 		{
-			switch( event.key.keysym.sym )
-			{
-				case SDLK_UP: yVel -= DOT_HEIGHT / 2; break;
-				case SDLK_DOWN: yVel += DOT_HEIGHT / 2; break;
-				case SDLK_LEFT: xVel -= DOT_WIDTH / 2; break;
-				case SDLK_RIGHT: xVel += DOT_WIDTH / 2; break;
-			}
-		}*/
+			case SDLK_LSHIFT: movespeed=10; break;			//does not work properly
+			case SDLK_UP: yVel +=movespeed; break;
+			case SDLK_DOWN: yVel -=movespeed; break;
+			case SDLK_LEFT: xVel +=movespeed; break;
+			case SDLK_RIGHT: xVel -=movespeed; break;
+		}
+		/*if (event.key.keysym.sym==SDLK_LSHIFT)
+			movespeed=4;*/
     }
 }
 
