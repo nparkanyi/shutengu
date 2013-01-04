@@ -9,7 +9,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int SCREEN_BPP = 32;
-int movespeed=10;
+int movespeed=3;
 
 //The frame rate
 const int FRAMES_PER_SECOND = 60;
@@ -157,32 +157,30 @@ ship::ship()
 
 void ship::handle_input()
 {
-    //If a key was pressed
+    //If a key was pressed, prepare to do something
     if( event.type == SDL_KEYDOWN )
     {
+    	//check which key is pressed
 		switch( event.key.keysym.sym )
 		{
-			case SDLK_LSHIFT: movespeed=1; break;			//does not work properly
 			case SDLK_UP: yVel -=movespeed; break;
 			case SDLK_DOWN: yVel +=movespeed; break;
 			case SDLK_LEFT: xVel -=movespeed; break;
 			case SDLK_RIGHT: xVel +=movespeed; break;
 		}
 	}
-    //If a key was released
-	if( event.type == SDL_KEYUP )
+    //If a key was released, prepare to do something
+	/*if( event.type == SDL_KEYUP )
     {
+    	//check which key is released
 		switch( event.key.keysym.sym )
 		{
-			case SDLK_LSHIFT: movespeed=10; break;			//does not work properly
 			case SDLK_UP: yVel +=movespeed; break;
 			case SDLK_DOWN: yVel -=movespeed; break;
 			case SDLK_LEFT: xVel +=movespeed; break;
 			case SDLK_RIGHT: xVel -=movespeed; break;
 		}
-		/*if (event.key.keysym.sym==SDLK_LSHIFT)
-			movespeed=4;*/
-    }
+    }*/
 }
 
 void ship::move()
