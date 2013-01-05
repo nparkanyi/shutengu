@@ -3,7 +3,9 @@
 //The headers
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
+#include "SDL/SDL_ttf.h"
 #include <string>
+#include <stdio.h>
 
 //The screen attributes
 const int SCREEN_WIDTH = 640;
@@ -19,14 +21,25 @@ const int SHIP_WIDTH = 40;
 const int SHIP_HEIGHT = 50;
 
 //The surfaces
-SDL_Surface *theship = NULL;
-SDL_Surface *background=NULL;
+SDL_Surface *menu = NULL;
+SDL_Surface *theship =NULL;
+SDL_Surface *shipdeath = NULL;
+SDL_Surface *background = NULL;
+SDL_Surface *boss = NULL;
 SDL_Surface *screen = NULL;
+SDL_Surface *menumsg= NULL;
 
 //The event structure
 SDL_Event event;
 
+//font and color
+TTF_Font *font = NULL;
+SDL_Color textColor = {255,0,255};
+
+//clips
+SDL_Rect clips[5];
 //The ship that will move around on the screen
+
 class ship
 {
     private:
@@ -35,6 +48,8 @@ class ship
 
     //The velocity of the dot
     int xVel, yVel;
+
+	int frame;
 
     public:
     //Initializes the variables
@@ -93,7 +108,30 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination,
     //Blit
     SDL_BlitSurface( source, clip, destination, &offset );
 }
-
+/*void set_clips()
+{
+	//clip sprites
+	clips[0].x=0;
+	clips[0].y=0;
+	clips[0].w=SHIP_WIDTH;
+	clips[0].h=SHIP_HEIGHT;
+	clips[1].x=0;
+	clips[1].y=0;
+	clips[1].w=SHIP_WIDTH;
+	clips[1].h=SHIP_HEIGHT;
+	clips[2].x=SHIP_WIDTH*2;
+	clips[2].y=0;
+	clips[2].w=SHIP_WIDTH;
+	clips[2].h=SHIP_HEIGHT;
+	clips[3].x=SHIP_WIDTH*3;
+	clips[3].y=0;
+	clips[3].w=SHIP_WIDTH;
+	clips[3].h=SHIP_HEIGHT;
+	clips[4].x=SHIP_WIDTH*4;
+	clips[4].y=0;
+	clips[4].w=SHIP_WIDTH;
+	clips[4].h=SHIP_HEIGHT;
+}*/
 bool init()
 {
     //Initialize all SDL subsystems
@@ -111,6 +149,10 @@ bool init()
         return false;
     }
 
+	//initialize ttf
+	if (TTF_Init()==-1){
+		return false;
+	}
     //Set the window caption
     SDL_WM_SetCaption( "Prototype", NULL );
 
@@ -120,12 +162,18 @@ bool init()
 
 bool load_files()
 {
-    //Load the Shi[ image
+    //Load the Ship image
+    menu = IMG_Load("menu.png");
     theship = IMG_Load( "gameship.png" );
-    background=IMG_Load("background.png");
+    shipdeath = IMG_Load("shipdeath.png");
+    background = IMG_Load("background.png");
+	boss = IMG_Load("boss.png");
+
+	//open font
+	font = TTF_OpenFont("lazy.ttf",28);
 
     //If there was a problem in loading the ship
-    if(( theship == NULL)||(background==NULL) )
+    if(( theship == NULL) || (background==NULL) || (boss==NULL) || (shipdeath==NULL) || (menu==NULL) || (font==NULL) )
     {
         return false;
     }
@@ -137,8 +185,18 @@ bool load_files()
 void clean_up()
 {
     //Free the surface
-    SDL_FreeSurface( theship );
+    SDL_FreeSurface(theship);
+    SDL_FreeSurface(shipdeath);
     SDL_FreeSurface(background);
+    SDL_FreeSurface(boss);
+    SDL_FreeSurface(menu);
+	SDL_FreeSurface(menumsg);
+
+	//Close the font that was used
+    TTF_CloseFont( font );
+
+    //Quit SDL_ttf
+    TTF_Quit();
 
     //Quit SDL
     SDL_Quit();
@@ -170,7 +228,7 @@ void ship::handle_input()
 		}
 	}
     //If a key was released, prepare to do something
-	/*if( event.type == SDL_KEYUP )
+	if( event.type == SDL_KEYUP )
     {
     	//check which key is released
 		switch( event.key.keysym.sym )
@@ -180,25 +238,25 @@ void ship::handle_input()
 			case SDLK_LEFT: xVel +=movespeed; break;
 			case SDLK_RIGHT: xVel -=movespeed; break;
 		}
-    }*/
+    }
 }
 
 void ship::move()
 {
-    //Move the dot left or right
+    //Move the ship left or right
     x += xVel;
 
-    //If the dot went too far to the left or right
+    //If the ship went too far to the left or right
     if( ( x < 170 ) || ( x + SHIP_WIDTH > 454 ) )
     {
         //move back
         x -= xVel;
     }
 
-    //Move the Ship up or down
+    //Move the ship up or down
     y += yVel;
 
-    //If the Ship went too far up or down
+    //If the ship went too far up or down
     if( ( y < 0 ) || ( y + SHIP_HEIGHT > SCREEN_HEIGHT ) )
     {
         //move back
@@ -210,6 +268,14 @@ void ship::show()
 {
     //Show the Ship
     apply_surface( x, y, theship, screen );
+    /*//If a key was pressed, prepare to do something
+    if( event.type == SDL_KEYDOWN )
+    {
+    	//check which key is pressed
+		if( event.key.keysym.sym==SDLK_x )
+			frame++;
+    }
+    apply_surface(x,y,shipdeath,screen,&clips[frame]);*/
 }
 
 Timer::Timer()
@@ -303,8 +369,19 @@ bool Timer::is_paused()
     return paused;
 }
 
-int main( int argc, char* args[] )
+int main(int argc, char* args[])
 {
+
+	FILE *fptr;
+	char msg[100];
+	if ((fptr=fopen("swkey.txt","r"))!=NULL){
+		if (fgets(msg,100,fptr)==NULL){
+			printf("error");
+		}
+		fclose(fptr);
+	}
+
+
     //Quit flag
     bool quit = false;
 
@@ -325,6 +402,7 @@ int main( int argc, char* args[] )
     {
         return 1;
     }
+
     //While the user hasn't quit
     while( quit == false )
     {
@@ -338,7 +416,7 @@ int main( int argc, char* args[] )
             myship.handle_input();
 
             //If the user has Xed out the window
-            if( event.type == SDL_QUIT )
+            if(( event.type == SDL_QUIT )||(event.key.keysym.sym==SDLK_ESCAPE))
             {
                 //Quit the program
                 quit = true;
@@ -351,22 +429,29 @@ int main( int argc, char* args[] )
         //Fill the screen white
         SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
 
+		if (event.type==SDL_KEYDOWN)
+		{
+			menu=NULL;
+		}
         //Show the ship/bg on the screen
-        apply_surface(0,0,background,screen);
-        myship.show();
-
+        menumsg = TTF_RenderText_Solid(font, msg, textColor);
+		apply_surface(0,0,background,screen);
+		apply_surface(0,0,boss,screen);
+		myship.show();
+		apply_surface(0,0,menu,screen);
+		apply_surface(20,400, menumsg,menu);
 
         //Update the screen
         if( SDL_Flip( screen ) == -1 )
         {
             return 1;
         }
-
         //Cap the frame rate
         if( fps.get_ticks() < 1000 / FRAMES_PER_SECOND )
         {
             SDL_Delay( ( 1000 / FRAMES_PER_SECOND ) - fps.get_ticks() );
         }
+
     }
 
     //Clean up
