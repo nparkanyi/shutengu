@@ -1,62 +1,43 @@
-//Jon Lui, Eugene Wang, Ms. Odecki, ICS 3U, 2012
-
 //The headers
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
-#include "SDL/SDL_mixer.h"
 #include <string>
 
-//The screen attributes
+//Screen attributes
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int SCREEN_BPP = 32;
-int movespeed=3;
 
-//The frame rate
-const int FRAMES_PER_SECOND = 60;
+//The frames per second
+const int FRAMES_PER_SECOND = 20;
 
-//The dimensions of the ship
+//The dimenstions of the stick figure
 const int SHIP_WIDTH = 40;
 const int SHIP_HEIGHT = 50;
-
 //The surfaces
-SDL_Surface *theship = NULL;
-SDL_Surface *background=NULL;
+SDL_Surface *ship = NULL;
 SDL_Surface *screen = NULL;
-
-//The audio
-Mix_Music *bgm=NULL;
-Mix_Chunk *gain=NULL;
 
 //The event structure
 SDL_Event event;
 
-//The ship that will move around on the screen
-class ship
+//sprite sheet areas
+SDL_Rect clips[5];
+
+class Ship
 {
-    private:
-    //The X and Y offsets
-    int x, y;
+	private:
+	int offSet;
+	int frame;
+	int status;
 
-    //The velocity of the dot
-    int xVel, yVel;
-
-    public:
-    //Initializes the variables
-    ship();
-
-    //Takes key presses and adjusts the velocity
-    void handle_input();
-
-    //Moves the dot
-    void move();
-
-    //Shows the ship on the screen
-    void show();
-};
-
-//The timer
-class Timer{
+	public:
+	Ship();
+	void handle_events();
+	void show();
+};//The timer
+class Timer
+{
     private:
     //The clock time when the timer started
     int startTicks;
@@ -85,7 +66,8 @@ class Timer{
     bool is_started();
     bool is_paused();
 };
-void printb( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL ){
+void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL )
+{
     //Holds offsets
     SDL_Rect offset;
 
@@ -96,8 +78,32 @@ void printb( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Re
     //Blit
     SDL_BlitSurface( source, clip, destination, &offset );
 }
-
-bool init(){
+void set_clips()
+{
+	//clip sprites
+	clips[0].x=0;
+	clips[0].y=0;
+	clips[0].w=SHIP_WIDTH;
+	clips[0].h=SHIP_HEIGHT;
+	clips[1].x=0;
+	clips[1].y=0;
+	clips[1].w=SHIP_WIDTH;
+	clips[1].h=SHIP_HEIGHT;
+	clips[2].x=SHIP_WIDTH*2;
+	clips[2].y=0;
+	clips[2].w=SHIP_WIDTH;
+	clips[2].h=SHIP_HEIGHT;
+	clips[3].x=SHIP_WIDTH*3;
+	clips[3].y=0;
+	clips[3].w=SHIP_WIDTH;
+	clips[3].h=SHIP_HEIGHT;
+	clips[4].x=SHIP_WIDTH*4;
+	clips[4].y=0;
+	clips[4].w=SHIP_WIDTH;
+	clips[4].h=SHIP_HEIGHT;
+}
+bool init()
+{
     //Initialize all SDL subsystems
     if( SDL_Init( SDL_INIT_EVERYTHING ) == -1 )
     {
@@ -105,7 +111,7 @@ bool init(){
     }
 
     //Set up the screen
-    screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_FULLSCREEN );
+    screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE );
 
     //If there was an error in setting up the screen
     if( screen == NULL )
@@ -113,35 +119,22 @@ bool init(){
         return false;
     }
 
-    //Start SDL_mixer
-    if(Mix_OpenAudio(22050,MIX_DEFAULT_FORMAT,2,4096)==-1){
-		return false;
-    }
-
     //Set the window caption
-    SDL_WM_SetCaption( "Prototype", NULL );
+    SDL_WM_SetCaption( "Animation Test", NULL );
 
     //If everything initialized fine
     return true;
 }
+bool load_files()
+{
+    //Load the sprite sheet
+    ship = IMG_Load( "shipdeath.png" );
 
-bool prepAssets(){
-    //load images
-    theship = IMG_Load( "gameship.png" );
-    background=IMG_Load("background.png");
-
-    //If there was a problem in loading the ship
-    if(( theship == NULL)||(background==NULL) )
+    //If there was a problem in loading the sprite
+    if( ship == NULL )
     {
         return false;
     }
-
-	//load audio
-	bgm=Mix_LoadWAV("gacd.wav");
-
-	if((bgm==NULL)){
-		return false;
-	}
 
     //If everything loaded fine
     return true;
@@ -150,83 +143,30 @@ bool prepAssets(){
 void clean_up()
 {
     //Free the surface
-    SDL_FreeSurface( theship );
-    SDL_FreeSurface(background);
+    SDL_FreeSurface( ship );
 
     //Quit SDL
     SDL_Quit();
 }
-
-ship::ship()
+Ship::Ship()
 {
-    //Initialize the offsets
-    x = 300;
-    y = 400;
-
-    //Initialize the velocity
-    xVel = 0;
-    yVel = 0;
+	//Initialize movement variables
+	offSet=0;
+    //Initialize animation variables
+    frame = 0;
 }
-
-void ship::handle_input()
+void Ship::handle_events()
 {
     //If a key was pressed
     if( event.type == SDL_KEYDOWN )
     {
-		switch( event.key.keysym.sym )
+    	if(event.key.keysym.sym==SDLK_x)
 		{
-//			case SDLK_LSHIFT: movespeed=1; break;			//does not work properly
-			case SDLK_UP: yVel -=movespeed; break;
-			case SDLK_DOWN: yVel +=movespeed; break;
-			case SDLK_LEFT: xVel -=movespeed; break;
-			case SDLK_RIGHT: xVel +=movespeed; break;
+			frame++;
+			apply_surface(offSet,SCREEN_HEIGHT-SHIP_HEIGHT,ship,screen,&clips[frame]);
 		}
-	}
-    //If a key was released
-	if( event.type == SDL_KEYUP )
-    {
-		switch( event.key.keysym.sym )
-		{
-//			case SDLK_LSHIFT: movespeed=10; break;			//does not work properly
-			case SDLK_UP: yVel +=movespeed; break;
-			case SDLK_DOWN: yVel -=movespeed; break;
-			case SDLK_LEFT: xVel +=movespeed; break;
-			case SDLK_RIGHT: xVel -=movespeed; break;
-		}
-		/*if (event.key.keysym.sym==SDLK_LSHIFT)
-			movespeed=4;*/
     }
 }
-
-void ship::move()
-{
-    //Move the dot left or right
-    x += xVel;
-
-    //If the dot went too far to the left or right
-    if( ( x < 170 ) || ( x + SHIP_WIDTH > 454 ) )
-    {
-        //move back
-        x -= xVel;
-    }
-
-    //Move the Ship up or down
-    y += yVel;
-
-    //If the Ship went too far up or down
-    if( ( y < 0 ) || ( y + SHIP_HEIGHT > SCREEN_HEIGHT ) )
-    {
-        //move back
-        y -= yVel;
-    }
-}
-
-void ship::show()
-{
-    //Show the Ship
-    printb( x, y, theship, screen );
-}
-
 Timer::Timer()
 {
     //Initialize the variables
@@ -317,17 +257,10 @@ bool Timer::is_paused()
 {
     return paused;
 }
-
 int main( int argc, char* args[] )
 {
     //Quit flag
     bool quit = false;
-
-    //The dot that will be used
-    ship myship;
-
-    //The frame rate regulator
-    Timer fps;
 
     //Initialize
     if( init() == false )
@@ -336,10 +269,17 @@ int main( int argc, char* args[] )
     }
 
     //Load the files
-    if( prepAssets() == false )
+    if( load_files() == false )
     {
         return 1;
     }
+
+    //Clip the sprite sheet
+    set_clips();
+
+    //The frame rate regulator
+    Timer fps;
+
     //While the user hasn't quit
     while( quit == false )
     {
@@ -349,9 +289,6 @@ int main( int argc, char* args[] )
         //While there's events to handle
         while( SDL_PollEvent( &event ) )
         {
-            //Handle events for the dot
-            myship.handle_input();
-
             //If the user has Xed out the window
             if( event.type == SDL_QUIT )
             {
@@ -360,12 +297,8 @@ int main( int argc, char* args[] )
             }
         }
 
-        //Move the ship
-        myship.move();
-
-        //Show the ship/bg on the screen
-        printb(0,0,background,screen);
-        myship.show();
+        //Fill the screen white
+        SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
 
         //Update the screen
         if( SDL_Flip( screen ) == -1 )
