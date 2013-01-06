@@ -33,7 +33,7 @@ Mix_Chunk *bomb=NULL;
 
 //fonts and colours
 TTF_Font *menuFont=NULL;
-SDL_Color defaultColor={255,0,255};
+SDL_Color defaultColor={0,0,0};
 
 //event handler
 SDL_Event event;
@@ -288,12 +288,13 @@ bool Timer::isPaused(){
 int main(int argc,char* args[]){
 	FILE *fptr;
 	char msg[100];
-	if ((fptr=fopen("sw.txt","r"))!=NULL){
+	if ((fptr=fopen("text/sw.txt","r"))!=NULL){
 		if (fgets(msg,100,fptr)==NULL){
 			printf("error");
 		}
 		fclose(fptr);
 	}
+	menumsg=TTF_RenderText_Solid(menuFont,msg,defaultColor);
 
 	//setup
     bool quit = false;		//maintains program loop
@@ -328,10 +329,10 @@ int main(int argc,char* args[]){
 				switch( event.key.keysym.sym ){
 					case SDLK_ESCAPE:
 						quit=true; break;
-//					case SDLK_x:
-//						if(Mix_PlayChannel(-1,bomb,0)==-1) return 1; break;
-//					case SDLK_z:
-//						if(newBGM()==false) return 0; break;
+					case SDLK_x:
+						if(Mix_PlayChannel(-1,bomb,0)==-1) return 1; break;
+					case SDLK_z:
+						menu=NULL;
 				}
 			}
 
@@ -346,8 +347,8 @@ int main(int argc,char* args[]){
         printb(0,0,background,screen);
         printb(0,0,boss,screen);
         myship.show();
+        printb(200,200,menumsg,menu);
         printb(0,0,menu,screen);
-        printb(0,0,menumsg,menu);
 
         //refresh the screen
         if(SDL_Flip(screen)==-1) return 1;
