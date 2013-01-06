@@ -3,13 +3,14 @@
 //The headers
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
+#include "SDL/SDL_mixer.h"
 #include <string>
 
 //The screen attributes
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int SCREEN_BPP = 32;
-int movespeed=10;
+int movespeed=3;
 
 //The frame rate
 const int FRAMES_PER_SECOND = 60;
@@ -22,6 +23,10 @@ const int SHIP_HEIGHT = 50;
 SDL_Surface *theship = NULL;
 SDL_Surface *background=NULL;
 SDL_Surface *screen = NULL;
+
+//The audio
+Mix_Music *bgm=NULL;
+Mix_Chunk *gain=NULL;
 
 //The event structure
 SDL_Event event;
@@ -51,8 +56,7 @@ class ship
 };
 
 //The timer
-class Timer
-{
+class Timer{
     private:
     //The clock time when the timer started
     int startTicks;
@@ -81,8 +85,7 @@ class Timer
     bool is_started();
     bool is_paused();
 };
-void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL )
-{
+void printb( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL ){
     //Holds offsets
     SDL_Rect offset;
 
@@ -94,8 +97,7 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination,
     SDL_BlitSurface( source, clip, destination, &offset );
 }
 
-bool init()
-{
+bool init(){
     //Initialize all SDL subsystems
     if( SDL_Init( SDL_INIT_EVERYTHING ) == -1 )
     {
@@ -103,12 +105,17 @@ bool init()
     }
 
     //Set up the screen
-    screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE );
+    screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_FULLSCREEN );
 
     //If there was an error in setting up the screen
     if( screen == NULL )
     {
         return false;
+    }
+
+    //Start SDL_mixer
+    if(Mix_OpenAudio(22050,MIX_DEFAULT_FORMAT,2,4096)==-1){
+		return false;
     }
 
     //Set the window caption
@@ -118,9 +125,8 @@ bool init()
     return true;
 }
 
-bool load_files()
-{
-    //Load the Shi[ image
+bool prepAssets(){
+    //load images
     theship = IMG_Load( "gameship.png" );
     background=IMG_Load("background.png");
 
@@ -129,6 +135,13 @@ bool load_files()
     {
         return false;
     }
+
+	//load audio
+	bgm=Mix_LoadWAV("gacd.wav");
+
+	if((bgm==NULL)){
+		return false;
+	}
 
     //If everything loaded fine
     return true;
@@ -162,7 +175,7 @@ void ship::handle_input()
     {
 		switch( event.key.keysym.sym )
 		{
-			case SDLK_LSHIFT: movespeed=1; break;			//does not work properly
+//			case SDLK_LSHIFT: movespeed=1; break;			//does not work properly
 			case SDLK_UP: yVel -=movespeed; break;
 			case SDLK_DOWN: yVel +=movespeed; break;
 			case SDLK_LEFT: xVel -=movespeed; break;
@@ -174,7 +187,7 @@ void ship::handle_input()
     {
 		switch( event.key.keysym.sym )
 		{
-			case SDLK_LSHIFT: movespeed=10; break;			//does not work properly
+//			case SDLK_LSHIFT: movespeed=10; break;			//does not work properly
 			case SDLK_UP: yVel +=movespeed; break;
 			case SDLK_DOWN: yVel -=movespeed; break;
 			case SDLK_LEFT: xVel +=movespeed; break;
@@ -211,7 +224,7 @@ void ship::move()
 void ship::show()
 {
     //Show the Ship
-    apply_surface( x, y, theship, screen );
+    printb( x, y, theship, screen );
 }
 
 Timer::Timer()
@@ -323,7 +336,7 @@ int main( int argc, char* args[] )
     }
 
     //Load the files
-    if( load_files() == false )
+    if( prepAssets() == false )
     {
         return 1;
     }
@@ -350,13 +363,9 @@ int main( int argc, char* args[] )
         //Move the ship
         myship.move();
 
-        //Fill the screen white
-        SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
-
         //Show the ship/bg on the screen
-        apply_surface(0,0,background,screen);
+        printb(0,0,background,screen);
         myship.show();
-
 
         //Update the screen
         if( SDL_Flip( screen ) == -1 )
