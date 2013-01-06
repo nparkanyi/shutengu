@@ -1,13 +1,12 @@
-Shutengu!! 0.1
+Shutengu!! 0.8
 ==============
 
-Shutengu!! is a bullet hell shooter with a sick tech theme and great music. Dodge through waves of
-bullets with intricate, dense patterns and enemies rushing in offensive formations. This game simply
-doesn't end; it continually increases in difficulty until you lose.
+Shutengu!! is a bullet hell shooter with a sick tech theme. Dodge through waves of bullets with intricate, dense patterns while listening to rockin' music. This game simply doesn't end; it continually increases in difficulty until you lose.
 
 Features
 --------
 * Kickass music from Binärpilot, CONS, Mesu Kasumai, and Twilight Electric
 * Complex bullet patterns defined by BulletML
-* Linearly increasing difficulty
-* SDL!
+* Infinitely increasing difficulty
+* Time pressure
+* SDL, not that plebian Allegro
