@@ -86,7 +86,7 @@ bool init(){
     if(SDL_Init(SDL_INIT_EVERYTHING)==-1) return false;
 
     //init screen or return false if error
-    screen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_FULLSCREEN);
+    screen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_SWSURFACE);
     if(screen==NULL) return false;
 
     //init SDL_mixer or return false if error
@@ -288,13 +288,13 @@ bool Timer::isPaused(){
 int main(int argc,char* args[]){
 	FILE *fptr;
 	char msg[100];
-	if ((fptr=fopen("text/sw.txt","r"))!=NULL){
+	if ((fptr=fopen("text/swkey.txt","r"))!=NULL){
 		if (fgets(msg,100,fptr)==NULL){
 			printf("error");
 		}
 		fclose(fptr);
 	}
-	menumsg=TTF_RenderText_Solid(menuFont,msg,defaultColor);
+	menumsg=TTF_RenderText_Solid(menuFont,"asdasdsaasdsaads",defaultColor);
 
 	//setup
     bool quit = false;		//maintains program loop
@@ -344,11 +344,13 @@ int main(int argc,char* args[]){
 
         //update ship's position
         myship.move();
+        //Fill the screen white
+        SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
         printb(0,0,background,screen);
         printb(0,0,boss,screen);
         myship.show();
-        printb(200,200,menumsg,menu);
         printb(0,0,menu,screen);
+        printb(200,200,menumsg,menu);
 
         //refresh the screen
         if(SDL_Flip(screen)==-1) return 1;
