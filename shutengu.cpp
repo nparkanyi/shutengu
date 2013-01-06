@@ -2,6 +2,7 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
 #include "SDL/SDL_mixer.h"
+#include "SDL/SDL_ttf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -18,14 +19,21 @@ const int SHIP_HEIGHT=50;
 const int SHIP_SPEED=3;
 
 //surfaces starring in this production
+SDL_Surface *menu=NULL;
 SDL_Surface *theship=NULL;
 SDL_Surface *background=NULL;
+SDL_Surface *boss=NULL;
 SDL_Surface *screen=NULL;
+SDL_Surface *menumsg=NULL;
 
 //the award-winning soundtrack
 Mix_Music *bgm=NULL;
 Mix_Chunk *gain=NULL;
 Mix_Chunk *bomb=NULL;
+
+//fonts and colours
+TTF_Font *menuFont=NULL;
+SDL_Color defaultColor={255,0,255};
 
 //event handler
 SDL_Event event;
@@ -48,7 +56,7 @@ class Timer{
     private:
 		int startTicks;		//time when it started
 		int pausedTicks;	//when paused: time past since start
-		bool paused;		//see is_paused
+		bool paused;		//see isPaused
 		bool started;		//see isStarted
 
     public:
@@ -57,9 +65,9 @@ class Timer{
 		void stop();
 		void pause();
 		void unpause();
-		int get_ticks();	//time past in the timer
+		int getTicks();	//time past in the timer
 		bool isStarted();	//timer status
-		bool is_paused();
+		bool isPaused();
 };
 
 //renders surfaces in specified coordinate
@@ -84,7 +92,10 @@ bool init(){
     //init SDL_mixer or return false if error
     if(Mix_OpenAudio(22050,MIX_DEFAULT_FORMAT,2,4096)==-1) return false;
 
-    SDL_WM_SetCaption("Prototype",NULL);	//set window caption
+	//init SDL_ttf or return false if error
+	if(TTF_Init()==-1) return false;
+
+    SDL_WM_SetCaption("Shutengu 0.8",NULL);	//set window caption
     SDL_ShowCursor(SDL_DISABLE);			//hide mouse pointer
 
     //all is well if we reach this point
@@ -94,15 +105,21 @@ bool init(){
 //initializes most game assets
 bool prepAssets(){
     //load images or return false if error
+    menu=IMG_Load("img/menu.png");
     theship=IMG_Load("img/gameship.png");
     background=IMG_Load("img/background.png");
-    if(( theship == NULL)||(background==NULL)) return false;
+    boss=IMG_Load("img/boss.png");
+    if((menu==NULL)||(theship==NULL)||(background==NULL)||(boss==NULL)) return false;
 
 	//load audio or return false if error
 	bgm=Mix_LoadMUS("audio/hahaha.wav");	//menu music by default
 	gain=Mix_LoadWAV("audio/1up.wav");
 	bomb=Mix_LoadWAV("audio/boom.wav");
 	if((bgm==NULL)||(gain==NULL)||(bomb==NULL)) return false;
+
+	//open fonts or return false if error
+	menuFont=TTF_OpenFont("envy.ttf",16);
+	if((menuFont==NULL)) return false;
 
     //all is well
     return true;
@@ -111,8 +128,11 @@ bool prepAssets(){
 //unloads assets and closes SDL subsystems
 void cleanUp(){
     //free all surfaces
+    SDL_FreeSurface(menu);
     SDL_FreeSurface(theship);
     SDL_FreeSurface(background);
+    SDL_FreeSurface(boss);
+    SDL_FreeSurface(menumsg);
     SDL_FreeSurface(screen);
 
 	//free all audio
@@ -120,6 +140,10 @@ void cleanUp(){
 	Mix_FreeChunk(gain);
 	Mix_FreeChunk(bomb);
 	Mix_CloseAudio();
+
+	//close all fonts
+	TTF_CloseFont(menuFont);
+	TTF_Quit();
 
     //quit SDL
     SDL_Quit();
@@ -240,7 +264,7 @@ void Timer::unpause(){
 }
 
 //finds time since timer start
-int Timer::get_ticks(){
+int Timer::getTicks(){
 	//run only if timer is active
 	if(started==true){
 		if(paused==true) return pausedTicks;
@@ -257,11 +281,20 @@ bool Timer::isStarted(){
 }
 
 //checks if timer is not incrementing
-bool Timer::is_paused(){
+bool Timer::isPaused(){
 	return paused;
 }
 
 int main(int argc,char* args[]){
+	FILE *fptr;
+	char msg[100];
+	if ((fptr=fopen("sw.txt","r"))!=NULL){
+		if (fgets(msg,100,fptr)==NULL){
+			printf("error");
+		}
+		fclose(fptr);
+	}
+
 	//setup
     bool quit = false;		//maintains program loop
     ship myship;			//user-controlled ship
@@ -278,7 +311,7 @@ int main(int argc,char* args[]){
     	//MENU HERE
 
 		//once wave time is up: level up and restart wave timer
-        if (wave.get_ticks()>5000){
+        if (wave.getTicks()>5000){
 			wave.stop();
 			newBGM();
 			//WAVE CHANGE HERE
@@ -295,10 +328,10 @@ int main(int argc,char* args[]){
 				switch( event.key.keysym.sym ){
 					case SDLK_ESCAPE:
 						quit=true; break;
-					case SDLK_x:
-						if(Mix_PlayChannel(-1,bomb,0)==-1) return 1; break;
-					case SDLK_z:
-						if(newBGM()==false) return 0; break;
+//					case SDLK_x:
+//						if(Mix_PlayChannel(-1,bomb,0)==-1) return 1; break;
+//					case SDLK_z:
+//						if(newBGM()==false) return 0; break;
 				}
 			}
 
@@ -311,14 +344,17 @@ int main(int argc,char* args[]){
         //update ship's position
         myship.move();
         printb(0,0,background,screen);
+        printb(0,0,boss,screen);
         myship.show();
+        printb(0,0,menu,screen);
+        printb(0,0,menumsg,menu);
 
         //refresh the screen
         if(SDL_Flip(screen)==-1) return 1;
 
         //limit the frame rate
-        if(fps.get_ticks()<1000/FRAMES_PER_SECOND){
-            SDL_Delay((1000/FRAMES_PER_SECOND)-fps.get_ticks());
+        if(fps.getTicks()<1000/FRAMES_PER_SECOND){
+            SDL_Delay((1000/FRAMES_PER_SECOND)-fps.getTicks());
         }
     }
 

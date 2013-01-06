@@ -1,6 +1,26 @@
 Changes to Shutengu!!
 =====================
 
+0.8 Jan 5 2012
+--------------
++ Added SDL_ttf
++ Added SDL_mixer
++ Added the font Envy Code R
++ Added randomly selected music
++ Added timers to help control game pace
++ Added menu with instructions
++ Added basic animations
++ Added more code comments
+
+- Removed test files
+- Removed unneeded .dll files
+- Hid mouse pointer from game area
+- Removed so much exraneous whitespace
+
+* Redesigned background
+* Reformatted code
+* Switched to fullscreen mode at 640*480 resolution
+
 0.1 Dec 19 2012
 ---------------
 + Added rudimentary motion
