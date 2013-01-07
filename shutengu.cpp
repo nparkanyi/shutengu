@@ -5,6 +5,8 @@
 #include "SDL/SDL_ttf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <sstream>
 #include <time.h>
 
 //screen attributes
@@ -25,6 +27,7 @@ SDL_Surface *background=NULL;
 SDL_Surface *boss=NULL;
 SDL_Surface *screen=NULL;
 SDL_Surface *menumsg=NULL;
+SDL_Surface *points=NULL;
 
 //the award-winning soundtrack
 Mix_Music *bgm=NULL;
@@ -34,6 +37,7 @@ Mix_Chunk *bomb=NULL;
 //fonts and colours
 TTF_Font *menuFont=NULL;
 SDL_Color defaultColor={0,0,0};
+SDL_Color pointsColor={255,255,0};
 
 //event handler
 SDL_Event event;
@@ -134,6 +138,7 @@ void cleanUp(){
     SDL_FreeSurface(boss);
     SDL_FreeSurface(menumsg);
     SDL_FreeSurface(screen);
+    SDL_FreeSurface(points);
 
 	//free all audio
 	Mix_FreeMusic(bgm);
@@ -301,11 +306,13 @@ int main(int argc,char* args[]){
     ship myship;			//user-controlled ship
 	Timer fps;				//controls frame rate
 	Timer wave;				//time until next wave
+	Timer score;			//the score counted with time
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
 	if(Mix_PlayMusic(bgm,-1)==-1) return 1;
 	fps.start();
 	wave.start();
+	score.start();
 
     //game runs here
     while(quit==false){
@@ -351,6 +358,15 @@ int main(int argc,char* args[]){
         myship.show();
         printb(0,0,menu,screen);
         printb(200,200,menumsg,menu);
+        //THE WHOLE SCORE PRINTER. PUT IN GAME
+        //timer's time as a string
+        std::stringstream time;
+        //converts timer's time to string
+        time << "Score: " << score.getTicks()/10;
+        //render time surface
+        points=TTF_RenderText_Solid(menuFont, time.str().c_str(), pointsColor);
+        //apply time surface
+        printb(0,300,points,screen);
 
         //refresh the screen
         if(SDL_Flip(screen)==-1) return 1;
