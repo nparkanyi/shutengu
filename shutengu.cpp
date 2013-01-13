@@ -144,11 +144,7 @@ bool prepAssets(){
         b[i].hitbox.x=rand()%420+120;
 		b[i].hitbox.h=5;
 		b[i].hitbox.w=5;
-<<<<<<< HEAD
 		b[i].hitbox.y=0;
-=======
-		b[i].hitbox.y=rand()%20+20;
->>>>>>> ef7ab364672f35b2cc1abe0682778585a4806fe7
     }
 
     //all is well
@@ -372,7 +368,6 @@ int main(int argc,char* args[]){
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
 	if(Mix_PlayMusic(bgm,-1)==-1) return 1;
-<<<<<<< HEAD
 
 	//read and display the string of appropriate language
 	FILE *fptr;
@@ -425,60 +420,6 @@ int main(int argc,char* args[]){
 			wave.start();
 		}
 
-=======
-
-	//read and display the string of appropriate language
-	FILE *fptr;
-	char strFile[25];
-	if((fptr=fopen("text/gr.txt","r"))!=NULL){
-		if(fgets(strFile,25,fptr)==NULL) return 1;
-	}
-	fclose(fptr);
-	menumsg=TTF_RenderText_Shaded(menuFont,strFile,defaultColor,menubgColor);
-
-	//menu runs here
-	while(quitMenu==false){
-		//display menu
-        printb((SCREEN_WIDTH-menumsg->w)/2,400,menumsg,menu);
-        printb(0,0,menu,screen);
-
-		//menu-only key controls
-		while(SDL_PollEvent(&event)){
-            if(event.type==SDL_KEYDOWN){
-                switch( event.key.keysym.sym ){
-                    case SDLK_RETURN: quitMenu=true; break;
-                    case SDLK_ESCAPE:
-						quitMenu=true;
-						quitGame=true; break;
-                }
-            }
-
-			//if the window gets X'd
-			if(event.type==SDL_QUIT){
-					quitMenu=true;			//quit the menu
-					quitGame=true;			//skip the game
-			}
-		}
-
-		//refresh the screen
-        if(SDL_Flip(screen)==-1) return 1;
-	}
-
-	wave.start();
-	scoreT.start();
-	newBGM();
-
-    //game runs here
-    while(quitGame==false){
-		fps.start();
-		//once wave time is up: level up and restart wave timer
-//        if (wave.getTicks()>10000){
-//			newBGM();
-//			//WAVE CHANGE/TIMER RESTART HERE
-//			wave.start();
-//		}
-
->>>>>>> ef7ab364672f35b2cc1abe0682778585a4806fe7
 		//while there's science to do
 		while(SDL_PollEvent(&event)){
 			//ship controls
