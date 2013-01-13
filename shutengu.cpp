@@ -5,9 +5,9 @@
 #include "SDL/SDL_ttf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string>
 #include <sstream>
-#include <time.h>
 
 //screen attributes
 const int SCREEN_WIDTH=640;
@@ -27,9 +27,10 @@ SDL_Surface *background=NULL;
 SDL_Surface *boss=NULL;
 SDL_Surface *screen=NULL;
 SDL_Surface *menumsg=NULL;
+SDL_Surface *bullet=NULL;
 SDL_Surface *points=NULL;
 
-//the award-winning soundtrack
+//the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *bgm=NULL;
 Mix_Chunk *gain=NULL;
 Mix_Chunk *bomb=NULL;
@@ -37,7 +38,8 @@ Mix_Chunk *bomb=NULL;
 //fonts and colours
 TTF_Font *menuFont=NULL;
 SDL_Color defaultColor={0,0,0};
-SDL_Color pointsColor={255,255,0};
+SDL_Color menubgColor={0xff,0xff,0xff};
+SDL_Color pointsColor={0xaf,0xdd,0xe9};
 
 //event handler
 SDL_Event event;
@@ -45,15 +47,23 @@ SDL_Event event;
 //lists ship properties
 class ship{
     private:
-		int x, y;			//position
 		int xVel, yVel;		//velocity
 
     public:
+		SDL_Rect hitbox;
 		ship();				//initializes
 		void handle_input();//handles keyboard controls for the ship
 		void move();		//handles motion
 		void show();		//renders ship
 };
+
+struct bulletData{
+	SDL_Rect hitbox;
+	int xVel;
+	int yVel;
+};
+
+bulletData b[5];
 
 //lists timer properties
 class Timer{
@@ -108,11 +118,15 @@ bool init(){
 
 //initializes most game assets
 bool prepAssets(){
+
+    int i;
+
     //load images or return false if error
     menu=IMG_Load("img/menu.png");
     theship=IMG_Load("img/gameship.png");
     background=IMG_Load("img/background.png");
     boss=IMG_Load("img/boss.png");
+    bullet=IMG_Load("img/bullet.png");
     if((menu==NULL)||(theship==NULL)||(background==NULL)||(boss==NULL)) return false;
 
 	//load audio or return false if error
@@ -122,8 +136,16 @@ bool prepAssets(){
 	if((bgm==NULL)||(gain==NULL)||(bomb==NULL)) return false;
 
 	//open fonts or return false if error
-	menuFont=TTF_OpenFont("envy.ttf",16);
+	menuFont=TTF_OpenFont("envy.ttf",24);
 	if((menuFont==NULL)) return false;
+
+    for (i=0;i<5;i++)
+    {
+        b[i].hitbox.x=rand()%420+120;
+		b[i].hitbox.h=5;
+		b[i].hitbox.w=5;
+		b[i].hitbox.y=0;
+    }
 
     //all is well
     return true;
@@ -138,7 +160,7 @@ void cleanUp(){
     SDL_FreeSurface(boss);
     SDL_FreeSurface(menumsg);
     SDL_FreeSurface(screen);
-    SDL_FreeSurface(points);
+    SDL_FreeSurface(bullet);
 
 	//free all audio
 	Mix_FreeMusic(bgm);
@@ -179,10 +201,54 @@ bool newBGM(){
 	return true;
 }
 
+//checks collision
+bool isCol(SDL_Rect rectA,SDL_Rect rectB){
+	int leftA, leftB;
+    int rightA, rightB;
+    int topA, topB;
+    int bottomA, bottomB;
+
+    leftA=rectA.x;
+    rightA=rectA.x+rectA.w;
+    topA=rectA.y;
+    bottomA=rectA.y+rectA.h;
+
+    leftB=rectB.x;
+    rightB=rectB.x+rectB.w;
+    topB=rectB.y;
+    bottomB=rectB.y+rectB.h;
+
+    //If any of the sides from A are outside of B
+    if( bottomA <= topB )
+    {
+        return false;
+    }
+
+    if( topA >= bottomB )
+    {
+        return false;
+    }
+
+    if( rightA <= leftB )
+    {
+        return false;
+    }
+
+    if( leftA >= rightB )
+    {
+        return false;
+    }
+
+    //If none of the sides from A are outside B
+    return true;
+}
+
 //initializes ship's properties
 ship::ship(){
-    x = 300;		//ship's initial position
-    y = 400;
+	hitbox.x=300;
+	hitbox.y=400;
+	hitbox.h=SHIP_HEIGHT;
+	hitbox.w=SHIP_WIDTH;
     xVel = 0;		//ship's initial velocity
     yVel = 0;		//of course it's zero
 }
@@ -213,17 +279,17 @@ void ship::handle_input(){
 //controls ship movement
 void ship::move(){
     //horizontal motion: stop the ship if out of bounds
-    x+=xVel;
-    if((x<120)||(x+SHIP_WIDTH>520)) x-=xVel;
+    hitbox.x+=xVel;
+    if((hitbox.x<120)||(hitbox.x+SHIP_WIDTH>520)) hitbox.x-=xVel;
 
     //vertical motion: stop the ship if out of bounds
-    y+=yVel;
-    if((y<0)||(y+SHIP_HEIGHT>SCREEN_HEIGHT)) y-=yVel;
+    hitbox.y+=yVel;
+    if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel;
 }
 
 //renders the ship
 void ship::show(){
-    printb( x, y, theship, screen );
+    printb( hitbox.x, hitbox.y, theship, screen );
 }
 
 //init timer properties
@@ -291,82 +357,146 @@ bool Timer::isPaused(){
 }
 
 int main(int argc,char* args[]){
-	FILE *fptr;
-	char msg[100];
-	if ((fptr=fopen("text/swkey.txt","r"))!=NULL){
-		if (fgets(msg,100,fptr)==NULL){
-			printf("error");
-		}
-		fclose(fptr);
-	}
-	menumsg=TTF_RenderText_Solid(menuFont,"asdasdsaasdsaads",defaultColor);
-
+    srand(time(NULL));
 	//setup
-    bool quit = false;		//maintains program loop
+	bool quitMenu=false;	//maintains menu loop
+    bool quitGame=false;	//maintains game loop
     ship myship;			//user-controlled ship
 	Timer fps;				//controls frame rate
 	Timer wave;				//time until next wave
-	Timer score;			//the score counted with time
+	Timer scoreT;
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
 	if(Mix_PlayMusic(bgm,-1)==-1) return 1;
-	fps.start();
+
+	//read and display the string of appropriate language
+	FILE *fptr;
+	char strFile[25];
+	if((fptr=fopen("text/gr.txt","r"))!=NULL){
+		if(fgets(strFile,25,fptr)==NULL) return 1;
+	}
+	fclose(fptr);
+	menumsg=TTF_RenderText_Shaded(menuFont,strFile,defaultColor,menubgColor);
+
+	//menu runs here
+	while(quitMenu==false){
+		//display menu
+        printb((SCREEN_WIDTH-menumsg->w)/2,400,menumsg,menu);
+        printb(0,0,menu,screen);
+
+		//menu-only key controls
+		while(SDL_PollEvent(&event)){
+            if(event.type==SDL_KEYDOWN){
+                switch( event.key.keysym.sym ){
+                    case SDLK_RETURN: quitMenu=true; break;
+                    case SDLK_ESCAPE:
+						quitMenu=true;
+						quitGame=true; break;
+                }
+            }
+
+			//if the window gets X'd
+			if(event.type==SDL_QUIT){
+					quitMenu=true;			//quit the menu
+					quitGame=true;			//skip the game
+			}
+		}
+
+		//refresh the screen
+        if(SDL_Flip(screen)==-1) return 1;
+	}
+
 	wave.start();
-	score.start();
+	scoreT.start();
+	newBGM();
 
     //game runs here
-    while(quit==false){
-    	//MENU HERE
-
+    while(quitGame==false){
+		fps.start();
 		//once wave time is up: level up and restart wave timer
-        if (wave.getTicks()>5000){
-			wave.stop();
+        if (wave.getTicks()>10000){
 			newBGM();
-			//WAVE CHANGE HERE
+			//WAVE CHANGE/TIMER RESTART HERE
 			wave.start();
 		}
 
-        //while there's science to do
-        while(SDL_PollEvent(&event)){
+		//while there's science to do
+		while(SDL_PollEvent(&event)){
 			//ship controls
-            myship.handle_input();
+			myship.handle_input();
 
-            //other controls
-            if(event.type==SDL_KEYDOWN){
+			//other controls
+			if(event.type==SDL_KEYDOWN){
 				switch( event.key.keysym.sym ){
-					case SDLK_ESCAPE:
-						quit=true; break;
+					case SDLK_ESCAPE: quitGame=true; break;
 					case SDLK_x:
+						//BOMB HERE
 						if(Mix_PlayChannel(-1,bomb,0)==-1) return 1; break;
-					case SDLK_z:
-						menu=NULL;
 				}
 			}
 
 			//if the window gets X'd
-            if( event.type == SDL_QUIT ){
-                quit = true;
-            }
-        }
+			if( event.type == SDL_QUIT ){
+				quitGame = true;
+			}
+		}
 
-        //update ship's position
-        myship.move();
-        //Fill the screen white
-        SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
-        printb(0,0,background,screen);
-        printb(0,0,boss,screen);
-        myship.show();
-        printb(0,0,menu,screen);
-        printb(200,200,menumsg,menu);
-        //THE WHOLE SCORE PRINTER. PUT IN GAME
-        //timer's time as a string
+		if(isCol(myship.hitbox,b[0].hitbox)) quitGame=true;
+		if(isCol(myship.hitbox,b[1].hitbox)) quitGame=true;
+		if(isCol(myship.hitbox,b[2].hitbox)) quitGame=true;
+		if(isCol(myship.hitbox,b[3].hitbox)) quitGame=true;
+		if(isCol(myship.hitbox,b[4].hitbox)) quitGame=true;
+		if(b[0].hitbox.x>520) b[0].hitbox.x=120;
+		if(b[0].hitbox.y>480) b[0].hitbox.y=0;
+		if(b[1].hitbox.x>520) b[1].hitbox.x=120;
+		if(b[1].hitbox.y>480) b[1].hitbox.y=0;
+		if(b[2].hitbox.x>520) b[2].hitbox.x=120;
+		if(b[2].hitbox.y>480) b[2].hitbox.y=0;
+		if(b[3].hitbox.x>520) b[3].hitbox.x=120;
+		if(b[3].hitbox.y>480) b[3].hitbox.y=0;
+		if(b[4].hitbox.x>520) b[4].hitbox.x=120;
+		if(b[4].hitbox.y>480) b[4].hitbox.y=0;
+
+        //update screen data
+        myship.move();							//update ship's position
+        printb(0,0,background,screen);			//print background
+//        printb(0,5,boss,screen);				//print boss
+		myship.show();							//print position to screen
+
+		b[0].xVel=3;
+		b[0].yVel=1;
+		b[0].hitbox.y+=b[0].yVel;
+		b[0].hitbox.x+=b[0].xVel;
+		printb(b[0].hitbox.x,b[0].hitbox.y,bullet,screen,NULL);
+
+		b[1].xVel=1;
+		b[1].yVel=5;
+		b[1].hitbox.y+=b[1].yVel;
+		b[1].hitbox.x+=b[1].xVel;
+		printb(b[1].hitbox.x,b[1].hitbox.y,bullet,screen,NULL);
+
+		b[2].xVel=4;
+		b[2].yVel=2;
+		b[2].hitbox.y+=b[2].yVel;
+		b[2].hitbox.x+=b[2].xVel;
+		printb(b[2].hitbox.x,b[2].hitbox.y,bullet,screen,NULL);
+
+		b[3].xVel=6;
+		b[3].yVel=1;
+		b[3].hitbox.y+=b[3].yVel;
+		b[3].hitbox.x+=b[3].xVel;
+		printb(b[3].hitbox.x,b[3].hitbox.y,bullet,screen,NULL);
+
+		b[4].xVel=10;
+		b[4].yVel=2;
+		b[4].hitbox.y+=b[4].yVel;
+		b[4].hitbox.x+=b[4].xVel;
+		printb(b[4].hitbox.x,b[4].hitbox.y,bullet,screen,NULL);
+
         std::stringstream time;
-        //converts timer's time to string
-        time << "Score: " << score.getTicks()/10;
-        //render time surface
-        points=TTF_RenderText_Solid(menuFont, time.str().c_str(), pointsColor);
-        //apply time surface
-        printb(0,300,points,screen);
+        time<<scoreT.getTicks()/250;
+        points=TTF_RenderText_Shaded(menuFont,time.str().c_str(),pointsColor,{0,0,0});
+        printb(10,15,points,screen);
 
         //refresh the screen
         if(SDL_Flip(screen)==-1) return 1;
