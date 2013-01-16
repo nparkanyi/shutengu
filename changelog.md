@@ -1,6 +1,14 @@
 Changes to Shutengu!!
 =====================
 
+0.14 Jan 16 2012
+----------------
++ Added wave 0, where instructions are displayed shortly
++ Added icons to label stats
++ Added 1-up sound
+* Separated code into more functions
+* Fixed timer counting from the wrong number
+
 0.13 Jan 15 2012
 ----------------
 + Added all stats, and they all work!

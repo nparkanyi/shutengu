@@ -38,6 +38,7 @@ SDL_Surface *sfLives=NULL;
 SDL_Surface *sfLivesIcon=NULL;
 SDL_Surface *surfWaves=NULL;            //ha ha ha surf wave
 SDL_Surface *sfWavesIcon=NULL;
+SDL_Surface *sfHowTo=NULL;
 
 //the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
@@ -138,7 +139,14 @@ bool prepAssets() {
     sfLivesIcon=IMG_Load("img/lives.png");
     sfBombsIcon=IMG_Load("img/bombs.png");
     sfWavesIcon=IMG_Load("img/waves.png");
-    if((sfMenu==NULL)||(sfShip==NULL)||(sfBG==NULL)||(sfBullet==NULL)||(sfLivesIcon==NULL)||(sfWavesIcon==NULL)) return false;
+    sfHowTo=IMG_Load("img/howto.png");
+    if(sfMenu==NULL||
+            sfShip==NULL||
+            sfBG==NULL||
+            sfBullet==NULL||
+            sfLivesIcon==NULL||
+            sfWavesIcon==NULL||
+            sfHowTo==NULL) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
@@ -194,6 +202,7 @@ void cleanUp() {
     SDL_FreeSurface(surfWaves);
     SDL_FreeSurface(sfWavesIcon);
     SDL_FreeSurface(sfScore);
+    SDL_FreeSurface(sfHowTo);
 
     //free all audio
     Mix_FreeMusic(muBGM);
@@ -253,14 +262,14 @@ bool newBGM() {
     return true;
 }
 
-void nextWave(){
-	newBGM();
-	iMaxBul+=2;                       //after every wave increase, the number of bullets increases
-	b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
-	b[iMaxBul].yVel=rand()%5+1;
-	b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
-	b[iMaxBul-1].yVel=rand()%5+1;
-	prepBullets();
+void nextWave() {
+    newBGM();
+    iMaxBul+=2;                       //after every wave increase, the number of bullets increases
+    b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
+    b[iMaxBul].yVel=rand()%5+1;
+    b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
+    b[iMaxBul-1].yVel=rand()%5+1;
+    prepBullets();
 }
 
 //checks collision
@@ -383,28 +392,67 @@ int Timer::getTicks() {
     return 0;
 }
 
+bool waveZero=true;     //determines setup time
+int iLife=3;            //life counts
+int iBomb=3;            //bomb counter
+int iWave=0;            //wave counter
+int iScore=0;           //score counter
+Timer tmScore;           //frequency of score increase
+Timer tmTime;             //time until next wave
+
+void renderHUD() {
+    //display the score
+    std::stringstream sScore;
+    if(waveZero==true) iScore=0;
+    else iScore=tmScore.getTicks()/250;
+    sScore<<iScore;
+    sfScore=TTF_RenderText_Shaded(fnHUD,sScore.str().c_str(),clScore,clDefault);
+    printb(7,2,sfScore,sfScreen);
+
+    //display the wave number
+    std::stringstream sWaves;
+    sWaves<<iWave;
+    surfWaves=TTF_RenderText_Shaded(fnHUD,sWaves.str().c_str(),clWaves,clDefault);
+    printb(568,-1,surfWaves,sfScreen);
+    printb(530,10,sfWavesIcon,sfScreen);
+
+    //display the time remaining in the wave
+    std::stringstream sTime;
+    if(waveZero==true) sTime<<10000/100-tmTime.getTicks()/100;
+    else sTime<<WAVE_LENGTH/100-tmTime.getTicks()/100;
+    sfTime=TTF_RenderText_Shaded(fnHUD,sTime.str().c_str(),clTime,clDefault);
+    printb(7,425,sfTime,sfScreen);
+
+    //displaying bombs left
+    std::stringstream sBombs;
+    sBombs<<iBomb;
+    sfBombs=TTF_RenderText_Shaded(fnHUD,sBombs.str().c_str(),clBomb,clDefault);
+    printb(568,380,sfBombs,sfScreen);
+    printb(530,391,sfBombsIcon,sfScreen);
+
+    //displaying lives left
+    std::stringstream sLives;
+    sLives<<iLife-1;
+    sfLives=TTF_RenderText_Shaded(fnHUD,sLives.str().c_str(),clLives,clDefault);
+    printb(568,427,sfLives,sfScreen);
+    printb(530,438,sfLivesIcon,sfScreen);
+}
+
 int main(int argc,char* args[]) {
     srand(time(NULL));      //spin the wheel!
     int i;                  //loop counter
 
     //stats
     int iHighScore=0;       //highscore variable
-    int iLife=3;            //life counts
-    int iBomb=3;            //bomb counter
-    int iWave=0;            //wave counter
-    int iScore=0;           //score counter
 
     //game state control
     bool quitMenu=false;    //maintains menu loop
     bool quitGame=false;    //maintains game loop
     bool quitOver=false;    //maintains game over loop
-    bool waveZero=true;		//determines setup time
 
     //timers
     Timer tmFPS;            //controls frame rate
     Timer tmFPSUpd;           //total fps updates
-    Timer tmTime;             //time until next wave
-    Timer tmScore;           //frequency of score increase
     Timer tmLives;          //periodically increase your life
 
     int frame=0;            //total frames past
@@ -424,223 +472,190 @@ int main(int argc,char* args[]) {
     sfMenuPrompt=TTF_RenderText_Shaded(fnMenu,strFile,clDefault,clMenuBG);
 
     randBullets();
-    //menu runs here
-    while(quitMenu==false) {
-        //display menu
-        printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,400,sfMenuPrompt,sfMenu);
-        printb(0,0,sfMenu,sfScreen);
-        //menu-only key controls
-        while(SDL_PollEvent(&event)) {
-            if(event.type==SDL_KEYDOWN) {
-                switch(event.key.keysym.sym) {
-                    case SDLK_RETURN:
-                        quitMenu=true;
-                        break;
-                    case SDLK_ESCAPE:
-                        quitMenu=true;
-                        quitGame=true;
-                        quitOver=true;
-                        break;
-                }
-            }
 
-            //if the window gets X'd
-            if(event.type==SDL_QUIT) {
-                quitMenu=true;          //quit the menu
-                quitGame=true;          //skip the game
-                quitOver=true;
-            }
-        }
-
-        //refresh the screen
-        if(SDL_Flip(sfScreen)==-1) return 1;
-    }
-
-    tmTime.start();
-    tmScore.start();
-    tmFPS.start();
-    tmFPSUpd.start();
-    newBGM();
-    tmLives.start();
-
-    //game runs here
-    while(quitGame==false) {
-        //once wave time is up: level up and restart wave timer
-		if(waveZero==true){				//setup phase is active
-			if(tmTime.getTicks()>10000) {
-				iWave++;
-				nextWave();
-				tmTime.start();
-				waveZero=false;
+	//menu runs here
+	while(quitMenu==false) {
+		//display menu
+		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,400,sfMenuPrompt,sfMenu);
+		printb(0,0,sfMenu,sfScreen);
+		//menu-only key controls
+		while(SDL_PollEvent(&event)) {
+			if(event.type==SDL_KEYDOWN) {
+				switch(event.key.keysym.sym) {
+					case SDLK_RETURN:
+						quitMenu=true;
+						break;
+					case SDLK_ESCAPE:
+						quitMenu=true;
+						quitGame=true;
+						quitOver=true;
+						break;
+				}
 			}
-		}
-		else{							//setup phase is off
-			if(tmTime.getTicks()>WAVE_LENGTH) {
-				iWave++;
-				nextWave();
-				tmTime.start();
+
+			//if the window gets X'd
+			if(event.type==SDL_QUIT) {
+				quitMenu=true;          //quit the menu
+				quitGame=true;          //skip the game
+				quitOver=true;
 			}
 		}
 
-        //1up timing
-        if(tmLives.getTicks()>60000) {
-            iLife++;
-            tmLives.start();
-            if(iLife>5) {
-                iLife=5;                         //limit lives to 3
-            }
-        }
+		//refresh the screen
+		if(SDL_Flip(sfScreen)==-1) return 1;
+	}
 
-        //while there's science to do
-        while(SDL_PollEvent(&event)) {
-            //ship controls
-            myship.handleInput();
+	tmTime.start();
+	tmFPS.start();
+	tmFPSUpd.start();
+	newBGM();
+	tmLives.start();
 
-            //other controls
-            if(event.type==SDL_KEYDOWN) {
-                switch(event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        quitGame=true;
-                        quitOver=true;
-                        break;
-                    case SDLK_x:
-                        if(iBomb>0) {
-                            iBomb--;
-                            for(i=0; i<=iMaxBul; i++) {
-                                b[i].hitbox.y=-480;
-                                b[i].xVel=rand()%10-5;
-                                b[i].yVel=rand()%5+1;
-                            }
-                            if(Mix_PlayChannel(-1,chBomb,0)==-1) return 1;
-                            break;
-                        }
-                }
-            }
+	//game runs here
+	while(quitGame==false) {
+		//once wave time is up: level up and restart wave timer
+		//setup phase is active
+		if(waveZero==true&&tmTime.getTicks()>10000) {
+			iWave++;
+			nextWave();
+			tmTime.start();
+			waveZero=false;
+			tmScore.start();
+		}
+		//setup phase is off
+		else if(tmTime.getTicks()>WAVE_LENGTH) {
+			iWave++;
+			nextWave();
+			tmTime.start();
+		}
 
-            //if the window gets X'd
-            if(event.type == SDL_QUIT) {
-                quitGame = true;
-                quitOver=true;
-            }
-        }
+		//1up timing
+		if(tmLives.getTicks()>90000) {
+			iLife++;
+			tmLives.start();
 
-        //update screen data
-        myship.move();                          //update ship's position
-        printb(0,0,sfBG,sfScreen);          //print background
-        myship.show();                          //print position to screen
+			//don't let player have too many lives
+			//if 1up is allowed, play sound
+			if(iLife>5)iLife=5;
+			else if(Mix_PlayChannel(-1,chGain,0)==-1) return 1;
+		}
 
-        for(i=0; i<=iMaxBul; i++) {
-            if(isCol(myship.hitbox,b[i].hitbox)) {
-                iLife--;
-                iBomb=3;
-                if(iLife==0) {
-                    quitGame=true;
-                }
-                b[i].hitbox.x=rand()%420-120;
-                b[i].hitbox.y=0;
-            }
-            if(b[i].hitbox.x>515) b[i].hitbox.x=120;
-            if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
-            if(b[i].hitbox.y>480) {                         //because collision is counted from topleft of the picture
-                b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
-                b[i].xVel=rand()%10-5;                      //bullet can travel left or right
-                b[i].yVel=rand()%5+1;                       //can only travel down
-            }
-            b[i].hitbox.y+=b[i].yVel;
-            b[i].hitbox.x+=b[i].xVel;
-            printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
-        }
+		//while there's science to do
+		while(SDL_PollEvent(&event)) {
+			//ship controls
+			myship.handleInput();
 
-        //display the score
-        std::stringstream topleft;
-        if(waveZero==true)
-			iScore=0;
-		else
-			iScore=tmScore.getTicks()/250;
-        topleft<<iScore;
-        sfScore=TTF_RenderText_Shaded(fnHUD,topleft.str().c_str(),clScore,clDefault);
-        printb(7,2,sfScore,sfScreen);
+			//other controls
+			if(event.type==SDL_KEYDOWN) {
+				switch(event.key.keysym.sym) {
+					case SDLK_ESCAPE:
+						quitGame=true;
+						quitOver=true;
+						break;
+					case SDLK_x:
+						if(iBomb>0) {
+							iBomb--;
+							for(i=0; i<=iMaxBul; i++) {
+								b[i].hitbox.y=-480;
+								b[i].xVel=rand()%10-5;
+								b[i].yVel=rand()%5+1;
+							}
+							if(Mix_PlayChannel(-1,chBomb,0)==-1) return 1;
+							break;
+						}
+				}
+			}
 
-        //display the wave number
-        std::stringstream topright;
-        topright<<iWave;
-        surfWaves=TTF_RenderText_Shaded(fnHUD,topright.str().c_str(),clWaves,clDefault);
-        printb(568,-1,surfWaves,sfScreen);
-        printb(530,10,sfWavesIcon,sfScreen);
+			//if the window gets X'd
+			if(event.type == SDL_QUIT) {
+				quitGame = true;
+				quitOver=true;
+			}
+		}
 
-        //display the time remaining in the wave
-        std::stringstream bottomleft;
-        if(waveZero==true)
-			bottomleft<<10000/100-tmTime.getTicks()/100;
-		else
-			bottomleft<<WAVE_LENGTH/100-tmTime.getTicks()/100;
-        sfTime=TTF_RenderText_Shaded(fnHUD,bottomleft.str().c_str(),clTime,clDefault);
-        printb(7,425,sfTime,sfScreen);
+		//update screen data
+		myship.move();                          //update ship's position
+		printb(0,0,sfBG,sfScreen);          //print background
+		myship.show();                          //print position to screen
 
-        //displaying bombs left
-        std::stringstream middleright;
-        middleright<<iBomb;
-        sfBombs=TTF_RenderText_Shaded(fnHUD,middleright.str().c_str(),clBomb,clDefault);
-        printb(568,380,sfBombs,sfScreen);
-        printb(530,391,sfBombsIcon,sfScreen);
+		if(waveZero==true) printb(0,0,sfHowTo,sfScreen,NULL);
 
-        //displaying lives left
-        std::stringstream bottomright;
-        bottomright<<iLife;
-        sfLives=TTF_RenderText_Shaded(fnHUD,bottomright.str().c_str(),clLives,clDefault);
-        printb(568,427,sfLives,sfScreen);
-        printb(530,438,sfLivesIcon,sfScreen);
+		for(i=0; i<=iMaxBul; i++) {
+			if(isCol(myship.hitbox,b[i].hitbox)) {
+				iLife--;
+				iBomb=3;
+				if(iLife==0) {
+					quitGame=true;
+				}
+				b[i].hitbox.x=rand()%420-120;
+				b[i].hitbox.y=0;
+			}
+			if(b[i].hitbox.x>515) b[i].hitbox.x=120;
+			if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
+			if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
+				b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
+				b[i].xVel=rand()%10-5;                      //bullet can travel left or right
+				b[i].yVel=rand()%5+1;                       //can only travel down
+			}
+			b[i].hitbox.y+=b[i].yVel;
+			b[i].hitbox.x+=b[i].xVel;
+			printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
+		}
 
-        //refresh the screen
-        if(SDL_Flip(sfScreen)==-1) return 1;
+		//display all stats
+		renderHUD();
 
-        //limit the frame rate
-        if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
-            SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
-            tmFPS.start();
-        }
+		//refresh the screen
+		if(SDL_Flip(sfScreen)==-1) return 1;
 
-        frame++;    //one frame passed
+		//limit the frame rate
+		if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
+			SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
+			tmFPS.start();
+		}
 
-        //update this once per second
-        if(tmFPSUpd.getTicks()>1000) {
-            std::stringstream newCaption;
-            newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
-            SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
-            tmFPSUpd.start();         //restart for the next one-second wait
-        }
-    }
+		frame++;    //one frame passed
 
-    while(quitOver==false) {
-        while(SDL_PollEvent(&event)) {
-            if(event.type==SDL_KEYDOWN) {
-                switch(event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        quitOver=true;
-                        break;
-                }
-            }
+		//update this once per second
+		if(tmFPSUpd.getTicks()>1000) {
+			std::stringstream newCaption;
+			newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
+			SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
+			tmFPSUpd.start();         //restart for the next one-second wait
+		}
+	}
 
-            //if the window gets X'd
-            if(event.type == SDL_QUIT) quitOver=true;
-        }
+	//game over runs here
+	while(quitOver==false) {
+		while(SDL_PollEvent(&event)) {
+			if(event.type==SDL_KEYDOWN) {
+				switch(event.key.keysym.sym) {
+					case SDLK_ESCAPE:
+						quitOver=true;
+						break;
+				}
+			}
 
-        //ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
-        std::stringstream overStr;
-        overStr<<"GAME OVER";
-        sfScore=TTF_RenderText_Shaded(fnHUD,overStr.str().c_str(),clScore,clDefault);
+			//if the window gets X'd
+			if(event.type == SDL_QUIT) quitOver=true;
+		}
 
-        std::stringstream finalScore;
-        finalScore<<iScore;
-        sfTime=TTF_RenderText_Shaded(fnHUD,finalScore.str().c_str(),clTime,clDefault);
+		//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
+		std::stringstream overStr;
+		overStr<<"GAME OVER";
+		sfScore=TTF_RenderText_Shaded(fnHUD,overStr.str().c_str(),clScore,clDefault);
 
-        printb(120,130,sfScore,sfBG,NULL);
-        printb(120,180,sfTime,sfBG,NULL);
-        printb(0,0,sfBG,sfScreen,NULL);
+		std::stringstream finalScore;
+		finalScore<<iScore;
+		sfTime=TTF_RenderText_Shaded(fnHUD,finalScore.str().c_str(),clTime,clDefault);
 
-        //refresh the screen
-        if(SDL_Flip(sfScreen)==-1) return 1;
-    }
+		printb(120,130,sfScore,sfBG,NULL);
+		printb(120,180,sfTime,sfBG,NULL);
+		printb(0,0,sfBG,sfScreen,NULL);
+
+		//refresh the screen
+		if(SDL_Flip(sfScreen)==-1) return 1;
+	}
 
     //user has now quit
     cleanUp();
