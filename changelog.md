@@ -1,6 +1,29 @@
 Changes to Shutengu!!
 =====================
 
+0.13 Jan 15 2012
+----------------
++ Added all stats, and they all work!
++ Added functional bomb
+- Removed some unnecessary timing code
+* Finally changed to Hungarian notation
+* Applied auto-formatting, and it's kind of okay
+
+0.12 Jan 14 2012
+----------------
++ Added game over screen
++ Added rudimentary lives counter
+
+0.11 Jan 13 2012
+----------------
++ Added improved bullet behaviour
++ Added some working stats
+
+0.9 Jan 11 2012
+---------------
++ Added scorekeeping
++ Added rudimentary bulets
+
 0.8 Jan 5 2012
 --------------
 + Added SDL_ttf
@@ -20,6 +43,10 @@ Changes to Shutengu!!
 * Redesigned background
 * Reformatted code
 * Switched to fullscreen mode at 640*480 resolution
+
+The Gap™
+--------
+* Something happened here, but it was not documented until 0.8.
 
 0.1 Dec 19 2012
 ---------------
