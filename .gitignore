@@ -17,4 +17,5 @@
 *.app
 
 # Program feedback
+stderr.txt
 stdout.txt
