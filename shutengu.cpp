@@ -21,7 +21,7 @@ const int SHIP_HEIGHT=50;
 const int SHIP_SPEED=3;
 
 //wave timer
-const int WAVE_LENGTH=10000;        //we must increase the frequency
+const int WAVE_LENGTH=30000;        //we must increase the frequency
 
 //surfaces starring in this production
 SDL_Surface *sfMenu=NULL;
@@ -33,8 +33,11 @@ SDL_Surface *sfBullet=NULL;
 SDL_Surface *sfScore=NULL;
 SDL_Surface *sfTime=NULL;
 SDL_Surface *sfBombs=NULL;
+SDL_Surface *sfBombsIcon=NULL;
 SDL_Surface *sfLives=NULL;
+SDL_Surface *sfLivesIcon=NULL;
 SDL_Surface *surfWaves=NULL;            //ha ha ha surf wave
+SDL_Surface *sfWavesIcon=NULL;
 
 //the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
@@ -132,7 +135,10 @@ bool prepAssets() {
     sfShip=IMG_Load("img/gameship.png");
     sfBG=IMG_Load("img/bg.png");
     sfBullet=IMG_Load("img/bullet.png");
-    if((sfMenu==NULL)||(sfShip==NULL)||(sfBG==NULL)||(sfBullet==NULL)) return false;
+    sfLivesIcon=IMG_Load("img/lives.png");
+    sfBombsIcon=IMG_Load("img/bombs.png");
+    sfWavesIcon=IMG_Load("img/waves.png");
+    if((sfMenu==NULL)||(sfShip==NULL)||(sfBG==NULL)||(sfBullet==NULL)||(sfLivesIcon==NULL)||(sfWavesIcon==NULL)) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
@@ -182,8 +188,11 @@ void cleanUp() {
     SDL_FreeSurface(sfBullet);
     SDL_FreeSurface(sfTime);
     SDL_FreeSurface(sfLives);
+    SDL_FreeSurface(sfLivesIcon);
     SDL_FreeSurface(sfBombs);
+    SDL_FreeSurface(sfBombsIcon);
     SDL_FreeSurface(surfWaves);
+    SDL_FreeSurface(sfWavesIcon);
     SDL_FreeSurface(sfScore);
 
     //free all audio
@@ -242,6 +251,16 @@ bool newBGM() {
 
     //all is well
     return true;
+}
+
+void nextWave(){
+	newBGM();
+	iMaxBul+=2;                       //after every wave increase, the number of bullets increases
+	b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
+	b[iMaxBul].yVel=rand()%5+1;
+	b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
+	b[iMaxBul-1].yVel=rand()%5+1;
+	prepBullets();
 }
 
 //checks collision
@@ -379,6 +398,7 @@ int main(int argc,char* args[]) {
     bool quitMenu=false;    //maintains menu loop
     bool quitGame=false;    //maintains game loop
     bool quitOver=false;    //maintains game over loop
+    bool waveZero=true;		//determines setup time
 
     //timers
     Timer tmFPS;            //controls frame rate
@@ -446,23 +466,28 @@ int main(int argc,char* args[]) {
     //game runs here
     while(quitGame==false) {
         //once wave time is up: level up and restart wave timer
-        if(tmTime.getTicks()>WAVE_LENGTH) {
-            iWave++;
-            newBGM();
-            iMaxBul+=2;                       //after every wave increase, the number of bullets increases
-            b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
-            b[iMaxBul].yVel=rand()%5+1;
-            b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
-            b[iMaxBul-1].yVel=rand()%5+1;
-            prepBullets();
-            //WAVE CHANGE/TIMER RESTART HERE
-            tmTime.start();
-        }
+		if(waveZero==true){				//setup phase is active
+			if(tmTime.getTicks()>10000) {
+				iWave++;
+				nextWave();
+				tmTime.start();
+				waveZero=false;
+			}
+		}
+		else{							//setup phase is off
+			if(tmTime.getTicks()>WAVE_LENGTH) {
+				iWave++;
+				nextWave();
+				tmTime.start();
+			}
+		}
+
+        //1up timing
         if(tmLives.getTicks()>60000) {
             iLife++;
             tmLives.start();
-            if(iLife>3) {
-                iLife=3;                         //limit lives to 3
+            if(iLife>5) {
+                iLife=5;                         //limit lives to 3
             }
         }
 
@@ -528,7 +553,10 @@ int main(int argc,char* args[]) {
 
         //display the score
         std::stringstream topleft;
-        iScore=tmScore.getTicks()/250;
+        if(waveZero==true)
+			iScore=0;
+		else
+			iScore=tmScore.getTicks()/250;
         topleft<<iScore;
         sfScore=TTF_RenderText_Shaded(fnHUD,topleft.str().c_str(),clScore,clDefault);
         printb(7,2,sfScore,sfScreen);
@@ -537,11 +565,15 @@ int main(int argc,char* args[]) {
         std::stringstream topright;
         topright<<iWave;
         surfWaves=TTF_RenderText_Shaded(fnHUD,topright.str().c_str(),clWaves,clDefault);
-        printb(540,20,surfWaves,sfScreen);
+        printb(568,-1,surfWaves,sfScreen);
+        printb(530,10,sfWavesIcon,sfScreen);
 
         //display the time remaining in the wave
         std::stringstream bottomleft;
-        bottomleft<<WAVE_LENGTH/100-tmTime.getTicks()/100;
+        if(waveZero==true)
+			bottomleft<<10000/100-tmTime.getTicks()/100;
+		else
+			bottomleft<<WAVE_LENGTH/100-tmTime.getTicks()/100;
         sfTime=TTF_RenderText_Shaded(fnHUD,bottomleft.str().c_str(),clTime,clDefault);
         printb(7,425,sfTime,sfScreen);
 
@@ -549,13 +581,15 @@ int main(int argc,char* args[]) {
         std::stringstream middleright;
         middleright<<iBomb;
         sfBombs=TTF_RenderText_Shaded(fnHUD,middleright.str().c_str(),clBomb,clDefault);
-        printb(540,240,sfBombs,sfScreen);
+        printb(568,380,sfBombs,sfScreen);
+        printb(530,391,sfBombsIcon,sfScreen);
 
         //displaying lives left
         std::stringstream bottomright;
         bottomright<<iLife;
         sfLives=TTF_RenderText_Shaded(fnHUD,bottomright.str().c_str(),clLives,clDefault);
-        printb(540,400,sfLives,sfScreen);
+        printb(568,427,sfLives,sfScreen);
+        printb(530,438,sfLivesIcon,sfScreen);
 
         //refresh the screen
         if(SDL_Flip(sfScreen)==-1) return 1;

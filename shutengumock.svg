@@ -13,7 +13,7 @@
    height="480"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.1 "
+   inkscape:version="0.48.4 r9939"
    sodipodi:docname="shutengumock.svg"
    inkscape:export-filename="C:\Users\Jon\Desktop\shutengumock.png"
    inkscape:export-xdpi="90"
@@ -27,17 +27,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.1156"
-     inkscape:cx="266.27444"
-     inkscape:cy="242.26993"
+     inkscape:zoom="1.5776966"
+     inkscape:cx="536.08575"
+     inkscape:cy="144.6038"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:showpageshadow="false"
      borderlayer="true"
-     inkscape:window-width="1366"
-     inkscape:window-height="747"
-     inkscape:window-x="-8"
+     inkscape:window-width="1304"
+     inkscape:window-height="745"
+     inkscape:window-x="54"
      inkscape:window-y="-8"
      inkscape:window-maximized="1" />
   <metadata
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -102,12 +102,18 @@
        style="color:#000000;fill:#ffeeaa;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:50;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        d="m 529.75896,923.56439 0,32 19.08013,0 3.89594,-14.52653 -5.29449,1.41519 -4.75339,1.27367 1.27368,-4.75338 4.12904,-15.40895 -18.33091,0 z m 24.20811,0 -3.24661,12.12903 5.29448,-1.42352 4.75339,-1.27366 -1.27368,4.75337 -4.77003,17.81478 7.03434,0 0,-32 -7.79189,0 z"
        id="rect3773"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="C:\Users\Jon\Desktop\bombs.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <path
        style="color:#000000;fill:#e9afaf;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:21.33399963;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        d="m 529.75896,989.87825 0,31.99995 32,0 0,-11.1187 -10.26194,8.3884 0,0.055 -0.037,-0.025 -0.0308,0.025 0,-0.055 -10.25577,-8.3884 0,-13.87355 5.30046,-4.3328 4.98613,4.0801 4.99846,-4.0801 5.30046,4.3328 0,-7.0077 -32,0 z"
        id="rect3781"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="C:\Users\Jon\Desktop\lives.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <text
        xml:space="preserve"
        style="font-size:46.08720016px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#e9afaf;fill-opacity:1;stroke:none;font-family:Envy Code R;-inkscape-font-specification:Envy Code R"
@@ -134,7 +140,10 @@
        style="color:#000000;fill:#afdde9;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:21.33399963;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        d="m 528.7672,584.71198 0,8.00634 16.23455,9.37559 15.76545,-9.10301 0,-8.27892 -32,0 z m 0,12.69097 0,4.65292 16.23455,9.3756 15.76545,-9.10301 0,-4.65293 -14.75119,8.51347 -1.01426,0.58954 -1.01426,-0.58954 -15.22029,-8.78605 z m 0,9.33755 0,9.97148 32,0 0,-9.69889 -14.75119,8.51981 -1.01426,0.5832 -1.01426,-0.5832 -15.22029,-8.7924 z"
        id="rect3811"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="C:\Users\Jon\Desktop\waves.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <text
        xml:space="preserve"
        style="font-size:46.08720016px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#afdde9;fill-opacity:1;stroke:none;font-family:Envy Code R;-inkscape-font-specification:Envy Code R"
