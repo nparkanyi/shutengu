@@ -1,6 +1,12 @@
 Changes to Shutengu!!
 =====================
 
+0.14.1 Jan 16 2012
+------------------
++ Added highscore
+* Fixed slight errors in counting
+* Changed size of the player's ship
+
 0.14 Jan 16 2012
 ----------------
 + Added wave 0, where instructions are displayed shortly

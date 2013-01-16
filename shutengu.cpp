@@ -3,6 +3,8 @@
 #include "SDL/SDL_image.h"
 #include "SDL/SDL_mixer.h"
 #include "SDL/SDL_ttf.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string>
 #include <sstream>
@@ -16,8 +18,8 @@ const int SCREEN_BPP=32;
 const int FRAMES_PER_SECOND=60;
 
 //ship attributes
-const int SHIP_WIDTH=40;
-const int SHIP_HEIGHT=50;
+const int SHIP_WIDTH=20;
+const int SHIP_HEIGHT=20;
 const int SHIP_SPEED=3;
 
 //wave timer
@@ -39,6 +41,7 @@ SDL_Surface *sfLivesIcon=NULL;
 SDL_Surface *surfWaves=NULL;            //ha ha ha surf wave
 SDL_Surface *sfWavesIcon=NULL;
 SDL_Surface *sfHowTo=NULL;
+SDL_Surface *sfHighScore=NULL;
 
 //the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
@@ -48,9 +51,11 @@ Mix_Chunk *chBomb=NULL;
 //fonts and colours
 TTF_Font *fnMenu=NULL;
 TTF_Font *fnHUD=NULL;
+TTF_Font *fnHighScore=NULL;
 SDL_Color clDefault= {0,0,0};
 SDL_Color clMenuBG= {0xff,0xff,0xff};
 SDL_Color clScore= {0xff,0xff,0xff};
+SDL_Color clHighScore= {0xcc,0xcc,0xcc};
 SDL_Color clWaves= {0xaf,0xdd,0xe9};
 SDL_Color clTime= {0xcc,0xff,0xaa};
 SDL_Color clBomb= {0xff,0xee,0xaa};
@@ -157,6 +162,7 @@ bool prepAssets() {
     //open fonts or return false if error
     fnMenu=TTF_OpenFont("envy.ttf",24);
     fnHUD=TTF_OpenFont("envy.ttf",46);
+    fnHighScore=TTF_OpenFont("envy.ttf",24);
     if((fnMenu==NULL)) return false;
 
     //all is well
@@ -203,6 +209,7 @@ void cleanUp() {
     SDL_FreeSurface(sfWavesIcon);
     SDL_FreeSurface(sfScore);
     SDL_FreeSurface(sfHowTo);
+    SDL_FreeSurface(sfHighScore);
 
     //free all audio
     Mix_FreeMusic(muBGM);
@@ -213,6 +220,7 @@ void cleanUp() {
     //close all fonts
     TTF_CloseFont(fnMenu);
     TTF_CloseFont(fnHUD);
+    TTF_CloseFont(fnHighScore);
     TTF_Quit();
 
     //quit SDL
@@ -299,10 +307,9 @@ bool isCol(SDL_Rect rectA,SDL_Rect rectB) {
     return true;
 }
 
-
 //initializes ship's properties
 ship::ship() {
-    hitbox.x=300;
+    hitbox.x=(640-SHIP_WIDTH)/2;
     hitbox.y=400;
     hitbox.h=SHIP_HEIGHT;
     hitbox.w=SHIP_WIDTH;
@@ -392,13 +399,15 @@ int Timer::getTicks() {
     return 0;
 }
 
+//stats
+int iHighScore=0;       //highscore variable
 bool waveZero=true;     //determines setup time
 int iLife=3;            //life counts
 int iBomb=3;            //bomb counter
 int iWave=0;            //wave counter
 int iScore=0;           //score counter
-Timer tmScore;           //frequency of score increase
-Timer tmTime;             //time until next wave
+Timer tmScore;          //frequency of score increase
+Timer tmTime;           //time until next wave
 
 void renderHUD() {
     //display the score
@@ -442,9 +451,6 @@ int main(int argc,char* args[]) {
     srand(time(NULL));      //spin the wheel!
     int i;                  //loop counter
 
-    //stats
-    int iHighScore=0;       //highscore variable
-
     //game state control
     bool quitMenu=false;    //maintains menu loop
     bool quitGame=false;    //maintains game loop
@@ -462,14 +468,24 @@ int main(int argc,char* args[]) {
     if(prepAssets()==false) return 1;
     if(Mix_PlayMusic(muBGM,-1)==-1) return 1;
 
-    //read and display the string of appropriate language
-    FILE *langptr;
+    //read and store the string of appropriate language
+    FILE *pLang;
     char strFile[25];       //language string
-    if((langptr=fopen("text/fr.txt","r"))!=NULL) {
-        if(fgets(strFile,25,langptr)==NULL) return 1;
+    if((pLang=fopen("text/fr.txt","r"))!=NULL) {
+        if(fgets(strFile,25,pLang)==NULL) return 1;
     }
-    fclose(langptr);
+    fclose(pLang);
     sfMenuPrompt=TTF_RenderText_Shaded(fnMenu,strFile,clDefault,clMenuBG);
+
+	//read and store current highscore
+	FILE *pHighScoreR;
+	char strHighScore[10];
+	if((pHighScoreR=fopen("text/highscore.txt","r"))!=NULL){
+		if(fgets(strHighScore,10,pHighScoreR)==NULL) return 1;
+	}
+	fclose(pHighScoreR);
+	sfHighScore=TTF_RenderText_Shaded(fnHighScore,strHighScore,clHighScore,clDefault);
+	iHighScore=(int)strHighScore;		//string contents as an int
 
     randBullets();
 
@@ -604,6 +620,7 @@ int main(int argc,char* args[]) {
 
 		//display all stats
 		renderHUD();
+		printb(7,50,sfHighScore,sfScreen,NULL);
 
 		//refresh the screen
 		if(SDL_Flip(sfScreen)==-1) return 1;
@@ -623,6 +640,15 @@ int main(int argc,char* args[]) {
 			SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
 			tmFPSUpd.start();         //restart for the next one-second wait
 		}
+	}
+
+	//store new high score, if there is one
+	if(iHighScore>iScore){
+		FILE *pHighScoreW;
+		if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
+			if(fprintf(pHighScoreW,"%d",iScore)) return 1;
+		}
+		fclose(pHighScoreW);
 	}
 
 	//game over runs here
