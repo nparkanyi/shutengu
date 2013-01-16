@@ -406,14 +406,11 @@ int iLife=3;            //life counts
 int iBomb=3;            //bomb counter
 int iWave=0;            //wave counter
 int iScore=0;           //score counter
-Timer tmScore;          //frequency of score increase
 Timer tmTime;           //time until next wave
 
 void renderHUD() {
     //display the score
     std::stringstream sScore;
-    if(waveZero==true) iScore=0;
-    else iScore=tmScore.getTicks()/250;
     sScore<<iScore;
     sfScore=TTF_RenderText_Shaded(fnHUD,sScore.str().c_str(),clScore,clDefault);
     printb(7,2,sfScore,sfScreen);
@@ -459,7 +456,7 @@ int main(int argc,char* args[]) {
     //timers
     Timer tmFPS;            //controls frame rate
     Timer tmFPSUpd;           //total fps updates
-    Timer tmLives;          //periodically increase your life
+    Timer tmScore;          //frequency of score increase
 
     int frame=0;            //total frames past
     ship myship;            //user-controlled ship
@@ -485,7 +482,7 @@ int main(int argc,char* args[]) {
 	}
 	fclose(pHighScoreR);
 	sfHighScore=TTF_RenderText_Shaded(fnHighScore,strHighScore,clHighScore,clDefault);
-	iHighScore=(int)strHighScore;		//string contents as an int
+	iHighScore=atoi(strHighScore);		//string contents as an int
 
     randBullets();
 
@@ -525,7 +522,6 @@ int main(int argc,char* args[]) {
 	tmFPS.start();
 	tmFPSUpd.start();
 	newBGM();
-	tmLives.start();
 
 	//game runs here
 	while(quitGame==false) {
@@ -545,10 +541,15 @@ int main(int argc,char* args[]) {
 			tmTime.start();
 		}
 
-		//1up timing
-		if(tmLives.getTicks()>90000) {
+		//score timing
+		if(tmScore.getTicks()>250){
+			iScore++;
+			tmScore.start();
+		}
+
+		//1up timing (and avoid a math error)
+		if(iScore%360==0&&iScore!=0) {
 			iLife++;
-			tmLives.start();
 
 			//don't let player have too many lives
 			//if 1up is allowed, play sound
@@ -576,6 +577,7 @@ int main(int argc,char* args[]) {
 								b[i].xVel=rand()%10-5;
 								b[i].yVel=rand()%5+1;
 							}
+							iScore-=50;
 							if(Mix_PlayChannel(-1,chBomb,0)==-1) return 1;
 							break;
 						}
@@ -643,10 +645,10 @@ int main(int argc,char* args[]) {
 	}
 
 	//store new high score, if there is one
-	if(iHighScore>iScore){
+	if(iScore>iHighScore){
 		FILE *pHighScoreW;
 		if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
-			if(fprintf(pHighScoreW,"%d",iScore)) return 1;
+			if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
 		}
 		fclose(pHighScoreW);
 	}
