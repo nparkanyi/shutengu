@@ -1,6 +1,16 @@
 Changes to Shutengu!!
 =====================
 
+0.16.3 Jan 17 2012
+------------------
+* Fixed some stats not resetting on game restart
+* Modified death sound to be less intrusive
+
+0.16.2 Jan 17 2012
+------------------
++ Added replay loop
+* It is super buggy
+
 0.16.1 Jan 17 2012
 ------------------
 + Added custom language game over prompt
