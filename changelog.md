@@ -6,6 +6,8 @@ Changes to Shutengu!!
 + Added highscore
 * Fixed slight errors in counting
 * Changed size of the player's ship
++ Added death sound
+
 
 0.14 Jan 16 2012
 ----------------

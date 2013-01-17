@@ -42,9 +42,11 @@ SDL_Surface *surfWaves=NULL;            //ha ha ha surf wave
 SDL_Surface *sfWavesIcon=NULL;
 SDL_Surface *sfHowTo=NULL;
 SDL_Surface *sfHighScore=NULL;
+SDL_Surface *sfRestart=NULL;
 
-//the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
+//the award-winning soundtracks
 Mix_Music *muBGM=NULL;
+Mix_Chunk *chDeath=NULL;
 Mix_Chunk *chGain=NULL;
 Mix_Chunk *chBomb=NULL;
 
@@ -157,6 +159,7 @@ bool prepAssets() {
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
     chGain=Mix_LoadWAV("audio/1up.wav");
     chBomb=Mix_LoadWAV("audio/boom.wav");
+    chDeath=Mix_LoadWAV("audio/death.wav");
     if((muBGM==NULL)||(chGain==NULL)||(chBomb==NULL)) return false;
 
     //open fonts or return false if error
@@ -210,6 +213,7 @@ void cleanUp() {
     SDL_FreeSurface(sfScore);
     SDL_FreeSurface(sfHowTo);
     SDL_FreeSurface(sfHighScore);
+    SDL_FreeSurface(sfRestart);
 
     //free all audio
     Mix_FreeMusic(muBGM);
@@ -455,6 +459,7 @@ int main(int argc,char* args[]) {
     bool quitMenu=false;    //maintains menu loop
     bool quitGame=false;    //maintains game loop
     bool quitOver=false;    //maintains game over loop
+    bool Replay=true;		//allows game play looping
 
     //timers
     Timer tmFPS;            //controls frame rate
@@ -599,6 +604,7 @@ int main(int argc,char* args[]) {
 		for(i=0; i<=iMaxBul; i++) {
 			if(isCol(myship.hitbox,b[i].hitbox)) {
 				iLife--;
+				if(Mix_PlayChannel(-1,chDeath,0)==-1)
 				iBomb=3;
 				if(iLife==0) {
 					quitGame=true;
@@ -643,10 +649,10 @@ int main(int argc,char* args[]) {
 	}
 
 	//store new high score, if there is one
-	if(iHighScore>iScore){
+	if(iScore>iHighScore){
 		FILE *pHighScoreW;
 		if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
-			if(fprintf(pHighScoreW,"%d",iScore)) return 1;
+			if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
 		}
 		fclose(pHighScoreW);
 	}
@@ -666,10 +672,17 @@ int main(int argc,char* args[]) {
 			if(event.type == SDL_QUIT) quitOver=true;
 		}
 
-		//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
+		//display end stats
 		std::stringstream overStr;
 		overStr<<"GAME OVER";
 		sfScore=TTF_RenderText_Shaded(fnHUD,overStr.str().c_str(),clScore,clDefault);
+
+		sfRestart=TTF_RenderText_Shaded(fnHUD,"Z TO RESTART",clScore,clDefault);
+		if(event.type==SDL_KEYDOWN){
+			if(event.key.keysym.sym==SDLK_z){
+				Replay=true;
+			}
+		}
 
 		std::stringstream finalScore;
 		finalScore<<iScore;
@@ -677,11 +690,13 @@ int main(int argc,char* args[]) {
 
 		printb(120,130,sfScore,sfBG,NULL);
 		printb(120,180,sfTime,sfBG,NULL);
+		printb(120,310,sfRestart,sfBG,NULL);
 		printb(0,0,sfBG,sfScreen,NULL);
 
 		//refresh the screen
 		if(SDL_Flip(sfScreen)==-1) return 1;
 	}
+
 
     //user has now quit
     cleanUp();
