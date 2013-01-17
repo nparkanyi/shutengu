@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 47
+=======
+12
+>>>>>>> fixed up the ship, put death sound, have yet to add loop
