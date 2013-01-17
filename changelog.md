@@ -1,6 +1,11 @@
 Changes to Shutengu!!
 =====================
 
+0.16.1 Jan 17 2012
+------------------
++ Added custom language game over prompt
+- Removed game's dependence on a consistent frame rate
+
 0.16 Jan 16 2012
 ------------------
 + Added new menu screen

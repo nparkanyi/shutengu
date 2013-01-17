@@ -20,7 +20,7 @@ const int FRAMES_PER_SECOND=60;
 //ship attributes
 const int SHIP_WIDTH=20;
 const int SHIP_HEIGHT=20;
-const int SHIP_SPEED=3;
+const int SHIP_SPEED=200;
 
 //wave timer
 const int WAVE_LENGTH=30000;        //we must increase the frequency
@@ -77,7 +77,7 @@ class ship {
         SDL_Rect hitbox;
         ship();             //initializes
         void handleInput();//handles keyboard controls for the ship
-        void move();        //handles motion
+        void move(Uint32 deltaTicks);        //handles motion
         void show();        //renders ship
 };
 
@@ -336,18 +336,20 @@ ship::ship() {
 }
 
 //responds to keypresses involving the ship
+//73 is the magic number that prevents ship moving bugs
+//the game prefers the ship's top left corner for some reason
 void ship::handleInput() {
     //key is pressed
     if(event.type==SDL_KEYDOWN) {
         switch(event.key.keysym.sym) {
             case SDLK_UP:
-                yVel-=SHIP_SPEED;
+                yVel-=SHIP_SPEED-73;
                 break;
             case SDLK_DOWN:
                 yVel+=SHIP_SPEED;
                 break;
             case SDLK_LEFT:
-                xVel-=SHIP_SPEED;
+                xVel-=SHIP_SPEED-73;
                 break;
             case SDLK_RIGHT:
                 xVel+=SHIP_SPEED;
@@ -359,13 +361,13 @@ void ship::handleInput() {
     if(event.type==SDL_KEYUP) {
         switch(event.key.keysym.sym) {
             case SDLK_UP:
-                yVel +=SHIP_SPEED;
+                yVel +=SHIP_SPEED-73;
                 break;
             case SDLK_DOWN:
                 yVel -=SHIP_SPEED;
                 break;
             case SDLK_LEFT:
-                xVel +=SHIP_SPEED;
+                xVel +=SHIP_SPEED-73;
                 break;
             case SDLK_RIGHT:
                 xVel -=SHIP_SPEED;
@@ -375,14 +377,26 @@ void ship::handleInput() {
 }
 
 //controls ship movement
-void ship::move() {
+void ship::move(Uint32 DeltaTicks) {
     //horizontal motion: stop the ship if out of bounds
-    hitbox.x+=xVel;
-    if((hitbox.x<120)||(hitbox.x+SHIP_WIDTH>520)) hitbox.x-=xVel;
+    //setting ship's movement to only be dependent on time
+    hitbox.x+=xVel*(DeltaTicks/1000.f);
+    if(hitbox.x<120){
+        hitbox.x=120;
+    }
+    else if(hitbox.x+SHIP_WIDTH>520){
+        hitbox.x=500;
+    }
 
     //vertical motion: stop the ship if out of bounds
-    hitbox.y+=yVel;
-    if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel;
+    hitbox.y+=yVel*(DeltaTicks/1000.f);
+    if(hitbox.y<0){
+        hitbox.y=0;
+    }
+    else if(hitbox.y+SHIP_HEIGHT>480){
+        hitbox.y=460;
+    }
+    //if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel*(DeltaTicks/1000.f);
 }
 
 //renders the ship
@@ -483,16 +497,17 @@ int main(int argc,char* args[]) {
     int i;                  //loop counter
 
     //game state control
-    bool quitMenu=false;   //maintains menu loop
-    bool quitGame=false;   //maintains game loop
-    bool quitOver=false;   //maintains game over loop
-	bool quitAll=false;	//allows player to replay
+    bool quitMenu=false;    //maintains menu loop
+    bool quitGame=false;    //maintains game loop
+    bool quitOver=false;    //maintains game over loop
+	bool quitAll=false;	    //allows player to replay
 	bool newHighScore=false;//true if player has beaten the new high score
 
     //timers
     Timer tmFPS;            //controls frame rate
-    Timer tmFPSUpd;          //total fps updates
+    Timer tmFPSUpd;         //total fps updates
     Timer tmScore;          //frequency of score increase
+    Timer tmDelta;          //track the change in time
 
     int frame=0;            //total frames past
     ship myship;            //user-controlled ship
@@ -559,6 +574,7 @@ int main(int argc,char* args[]) {
 	tmTime.start();
 	tmFPS.start();
 	tmFPSUpd.start();
+	tmDelta.start();
 
 	//game runs here
 	while(quitGame==false) {
@@ -623,9 +639,10 @@ int main(int argc,char* args[]) {
 		}
 
 		//update screen data
-		myship.move();                          //update ship's position
+		myship.move(tmDelta.getTicks());   //update ship's position
+		tmDelta.start();                    //restart change of time timer
 		printb(0,0,sfBG,sfScreen);          //print background
-		myship.show();                          //print position to screen
+		myship.show();                      //print position to screen
 
 		if(waveZero==true) printb(0,0,sfHowTo,sfScreen,NULL);
 
@@ -713,7 +730,13 @@ int main(int argc,char* args[]) {
 		finalScore<<iScore;
 		sfScore=TTF_RenderText_Blended(fnHUD,finalScore.str().c_str(),clWaves);
 
-		sfRestart=TTF_RenderText_Blended(fnMenu,"ENTER to replay",clScore);
+		FILE *pRestart;
+		char strRestart[30];
+		if((pRestart=fopen("text/grr.txt","r"))!=NULL){
+			if(fgets(strRestart,30,pRestart)==NULL) return 1;
+		}
+		fclose(pRestart);
+		sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
 
 		printb(0,0,sfOverBG,sfScreen,NULL);
 		printb((SCREEN_WIDTH-sfRestart->w)/2,315,sfRestart,sfScreen,NULL);
