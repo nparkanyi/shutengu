@@ -1,6 +1,14 @@
 Changes to Shutengu!!
 =====================
 
+0.15 Jan 16 2012
+----------------
++ Added score penalties
+- Score no longer defined by a timer
+* 1-ups now depend on score instead of time
+* Fixed crash when writing highscore
+* Fixed highscores not recording properly
+
 0.14.1 Jan 16 2012
 ------------------
 + Added highscore
