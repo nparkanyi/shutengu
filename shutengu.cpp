@@ -85,7 +85,7 @@ struct bulletData {         //bullet structure
     int yVel;
 };
 
-bulletData b[50];
+bulletData b[100];			//ARRAYS OF THIS STRUCTURE
 
 //lists timer properties
 class Timer {
