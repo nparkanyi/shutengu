@@ -43,8 +43,10 @@ SDL_Surface *sfWavesIcon=NULL;
 SDL_Surface *sfHowTo=NULL;
 SDL_Surface *sfHighScore=NULL;
 SDL_Surface *sfRestart=NULL;
+SDL_Surface *sfOverBG=NULL;
+SDL_Surface *sfNewHigh=NULL;
 
-//the award-winning soundtracks
+//the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
 Mix_Chunk *chDeath=NULL;
 Mix_Chunk *chGain=NULL;
@@ -55,7 +57,7 @@ TTF_Font *fnMenu=NULL;
 TTF_Font *fnHUD=NULL;
 TTF_Font *fnHighScore=NULL;
 SDL_Color clDefault= {0,0,0};
-SDL_Color clMenuBG= {0xff,0xff,0xff};
+SDL_Color clMenu= {0xff,0xff,0xff};
 SDL_Color clScore= {0xff,0xff,0xff};
 SDL_Color clHighScore= {0xcc,0xcc,0xcc};
 SDL_Color clWaves= {0xaf,0xdd,0xe9};
@@ -85,7 +87,9 @@ struct bulletData {         //bullet structure
     int yVel;
 };
 
-bulletData b[200];			//ARRAYS OF THIS STRUCTURE
+//A STRUCTURE ARRAY!
+//it must be declared here in order for the bulletData data type to be valid
+bulletData b[200];
 
 //lists timer properties
 class Timer {
@@ -147,51 +151,38 @@ bool prepAssets() {
     sfBombsIcon=IMG_Load("img/bombs.png");
     sfWavesIcon=IMG_Load("img/waves.png");
     sfHowTo=IMG_Load("img/howto.png");
+    sfOverBG=IMG_Load("img/gameover.png");
+    sfNewHigh=IMG_Load("img/newhigh.png");
     if(sfMenu==NULL||
-            sfShip==NULL||
-            sfBG==NULL||
-            sfBullet==NULL||
-            sfLivesIcon==NULL||
-            sfWavesIcon==NULL||
-            sfHowTo==NULL) return false;
+		sfShip==NULL||
+		sfBG==NULL||
+		sfBullet==NULL||
+		sfLivesIcon==NULL||
+		sfWavesIcon==NULL||
+		sfHowTo==NULL||
+		sfOverBG==NULL||
+		sfNewHigh==NULL) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
     chGain=Mix_LoadWAV("audio/1up.wav");
     chBomb=Mix_LoadWAV("audio/boom.wav");
     chDeath=Mix_LoadWAV("audio/death.wav");
-    if((muBGM==NULL)||(chGain==NULL)||(chBomb==NULL)) return false;
+    if(muBGM==NULL||
+		chGain==NULL||
+		chBomb==NULL||
+		chDeath==NULL) return false;
 
     //open fonts or return false if error
     fnMenu=TTF_OpenFont("envy.ttf",24);
     fnHUD=TTF_OpenFont("envy.ttf",46);
     fnHighScore=TTF_OpenFont("envy.ttf",24);
-    if((fnMenu==NULL)) return false;
+    if(fnMenu==NULL||
+		fnHUD==NULL||
+		fnHighScore==NULL) return false;
 
     //all is well
     return true;
-}
-
-//sets values for all new bullets
-bool prepBullets() {
-    int i;
-
-    for(i=0; i<=iMaxBul; i++) {
-        b[iMaxBul].hitbox.x=rand()%420+120;
-        b[iMaxBul].hitbox.h=5;
-        b[iMaxBul].hitbox.w=5;
-        b[iMaxBul].hitbox.y=0;
-    }
-}
-
-//randomizes all starting bullets
-bool randBullets() {
-    int i;
-
-    for(i=0; i<iMaxBul; i++) {
-        b[i].xVel=rand()%5+1;
-        b[i].yVel=rand()%5+1;
-    }
 }
 
 //unloads assets and closes SDL subsystems
@@ -214,11 +205,14 @@ void cleanUp() {
     SDL_FreeSurface(sfHowTo);
     SDL_FreeSurface(sfHighScore);
     SDL_FreeSurface(sfRestart);
+    SDL_FreeSurface(sfOverBG);
+    SDL_FreeSurface(sfNewHigh);
 
     //free all audio
     Mix_FreeMusic(muBGM);
     Mix_FreeChunk(chGain);
     Mix_FreeChunk(chBomb);
+    Mix_FreeChunk(chDeath);
     Mix_CloseAudio();
 
     //close all fonts
@@ -272,6 +266,26 @@ bool newBGM() {
 
     //all is well
     return true;
+}
+
+//sets values for all new bullets
+bool prepBullets() {
+    int i;
+    for(i=0; i<=iMaxBul; i++) {
+        b[iMaxBul].hitbox.x=rand()%420+120;
+        b[iMaxBul].hitbox.h=5;
+        b[iMaxBul].hitbox.w=5;
+        b[iMaxBul].hitbox.y=0;
+    }
+}
+
+//randomizes all starting bullets
+bool randBullets() {
+    int i;
+    for(i=0; i<iMaxBul; i++) {
+        b[i].xVel=rand()%5+1;
+        b[i].yVel=rand()%5+1;
+    }
 }
 
 void nextWave() {
@@ -403,7 +417,7 @@ int Timer::getTicks() {
     return 0;
 }
 
-//stats
+//changeable game data
 int iHighScore=0;       //highscore variable
 bool waveZero=true;     //determines setup time
 int iLife=3;            //life counts
@@ -448,19 +462,36 @@ void renderHUD() {
     printb(530,438,sfLivesIcon,sfScreen);
 }
 
+bool useBomb(){
+	int i;
+
+	if(iBomb>0) {
+		iBomb--;
+		for(i=0; i<=iMaxBul; i++) {
+			b[i].hitbox.y=-480;
+			b[i].xVel=rand()%10-5;
+			b[i].yVel=rand()%5+1;
+		}
+		iScore-=50;
+		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
+	}
+	return true;
+}
+
 int main(int argc,char* args[]) {
-    srand(time(NULL));      //spin the wheel!
+    srand(time(NULL));  	//spin the wheel!
     int i;                  //loop counter
 
     //game state control
-    bool quitMenu=false;    //maintains menu loop
-    bool quitGame=false;    //maintains game loop
-    bool quitOver=false;    //maintains game over loop
-    bool Replay=true;		//allows game play looping
+    bool quitMenu=false;   //maintains menu loop
+    bool quitGame=false;   //maintains game loop
+    bool quitOver=false;   //maintains game over loop
+	bool quitAll=false;	//allows player to replay
+	bool newHighScore=false;//true if player has beaten the new high score
 
     //timers
     Timer tmFPS;            //controls frame rate
-    Timer tmFPSUpd;           //total fps updates
+    Timer tmFPSUpd;          //total fps updates
     Timer tmScore;          //frequency of score increase
 
     int frame=0;            //total frames past
@@ -472,12 +503,12 @@ int main(int argc,char* args[]) {
 
     //read and store the string of appropriate language
     FILE *pLang;
-    char strFile[25];       //language string
-    if((pLang=fopen("text/fr.txt","r"))!=NULL) {
-        if(fgets(strFile,25,pLang)==NULL) return 1;
+    char strLang[25];       //language string
+    if((pLang=fopen("text/gr.txt","r"))!=NULL) {
+        if(fgets(strLang,25,pLang)==NULL) return 1;
     }
     fclose(pLang);
-    sfMenuPrompt=TTF_RenderText_Shaded(fnMenu,strFile,clDefault,clMenuBG);
+    sfMenuPrompt=TTF_RenderText_Blended(fnMenu,strLang,clMenu);
 
 	//read and store current highscore
 	FILE *pHighScoreR;
@@ -494,8 +525,8 @@ int main(int argc,char* args[]) {
 	//menu runs here
 	while(quitMenu==false) {
 		//display menu
-		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,400,sfMenuPrompt,sfMenu);
 		printb(0,0,sfMenu,sfScreen);
+		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,315,sfMenuPrompt,sfScreen);
 		//menu-only key controls
 		while(SDL_PollEvent(&event)) {
 			if(event.type==SDL_KEYDOWN) {
@@ -507,6 +538,7 @@ int main(int argc,char* args[]) {
 						quitMenu=true;
 						quitGame=true;
 						quitOver=true;
+						quitAll=true;
 						break;
 				}
 			}
@@ -516,6 +548,7 @@ int main(int argc,char* args[]) {
 				quitMenu=true;          //quit the menu
 				quitGame=true;          //skip the game
 				quitOver=true;
+				quitAll=true;
 			}
 		}
 
@@ -526,7 +559,6 @@ int main(int argc,char* args[]) {
 	tmTime.start();
 	tmFPS.start();
 	tmFPSUpd.start();
-	newBGM();
 
 	//game runs here
 	while(quitGame==false) {
@@ -537,6 +569,7 @@ int main(int argc,char* args[]) {
 			nextWave();
 			tmTime.start();
 			waveZero=false;
+			newBGM();
 			tmScore.start();
 		}
 		//setup phase is off
@@ -573,19 +606,11 @@ int main(int argc,char* args[]) {
 					case SDLK_ESCAPE:
 						quitGame=true;
 						quitOver=true;
+						quitAll=true;
 						break;
 					case SDLK_x:
-						if(iBomb>0) {
-							iBomb--;
-							for(i=0; i<=iMaxBul; i++) {
-								b[i].hitbox.y=-480;
-								b[i].xVel=rand()%10-5;
-								b[i].yVel=rand()%5+1;
-							}
-							iScore-=50;
-							if(Mix_PlayChannel(-1,chBomb,0)==-1) return 1;
-							break;
-						}
+						if(useBomb()==false) return 1;
+						break;
 				}
 			}
 
@@ -593,6 +618,7 @@ int main(int argc,char* args[]) {
 			if(event.type == SDL_QUIT) {
 				quitGame = true;
 				quitOver=true;
+				quitAll=true;
 			}
 		}
 
@@ -606,11 +632,9 @@ int main(int argc,char* args[]) {
 		for(i=0; i<=iMaxBul; i++) {
 			if(isCol(myship.hitbox,b[i].hitbox)) {
 				iLife--;
-				if(Mix_PlayChannel(-1,chDeath,0)==-1)
+				if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
 				iBomb=3;
-				if(iLife==0) {
-					quitGame=true;
-				}
+				if(iLife==0) quitGame=true;
 				b[i].hitbox.x=rand()%420-120;
 				b[i].hitbox.y=0;
 			}
@@ -635,6 +659,7 @@ int main(int argc,char* args[]) {
 
 		//limit the frame rate
 		if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
+			printf("slowing!");
 			SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
 			tmFPS.start();
 		}
@@ -657,48 +682,49 @@ int main(int argc,char* args[]) {
 			if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
 		}
 		fclose(pHighScoreW);
+		newHighScore=true;
 	}
+
+	//stop playing music
+	Mix_HaltMusic();
 
 	//game over runs here
 	while(quitOver==false) {
 		while(SDL_PollEvent(&event)) {
 			if(event.type==SDL_KEYDOWN) {
 				switch(event.key.keysym.sym) {
+					case SDLK_RETURN: quitOver=true;
 					case SDLK_ESCAPE:
 						quitOver=true;
+						quitAll=true;
 						break;
 				}
 			}
 
 			//if the window gets X'd
-			if(event.type == SDL_QUIT) quitOver=true;
-		}
-
-		//display end stats
-		std::stringstream overStr;
-		overStr<<"GAME OVER";
-		sfScore=TTF_RenderText_Shaded(fnHUD,overStr.str().c_str(),clScore,clDefault);
-
-		sfRestart=TTF_RenderText_Shaded(fnHUD,"Z TO RESTART",clScore,clDefault);
-		if(event.type==SDL_KEYDOWN){
-			if(event.key.keysym.sym==SDLK_z){
-				Replay=true;
+			if(event.type == SDL_QUIT){
+				quitOver=true;
+				quitAll=true;
 			}
 		}
 
+		//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
 		std::stringstream finalScore;
 		finalScore<<iScore;
-		sfTime=TTF_RenderText_Shaded(fnHUD,finalScore.str().c_str(),clTime,clDefault);
+		sfScore=TTF_RenderText_Blended(fnHUD,finalScore.str().c_str(),clWaves);
 
-		printb(120,130,sfScore,sfBG,NULL);
-		printb(120,180,sfTime,sfBG,NULL);
-		printb(120,310,sfRestart,sfBG,NULL);
-		printb(0,0,sfBG,sfScreen,NULL);
+		sfRestart=TTF_RenderText_Blended(fnMenu,"ENTER to replay",clScore);
+
+		printb(0,0,sfOverBG,sfScreen,NULL);
+		printb((SCREEN_WIDTH-sfRestart->w)/2,315,sfRestart,sfScreen,NULL);
+		printb((SCREEN_WIDTH-sfScore->w)/2,200,sfScore,sfScreen,NULL);
+		if(newHighScore==true) printb(340,234,sfNewHigh,sfScreen,NULL);
 
 		//refresh the screen
 		if(SDL_Flip(sfScreen)==-1) return 1;
-	}
 
+		SDL_WM_SetCaption("Shutengu!!",NULL);
+	}
 
     //user has now quit
     cleanUp();

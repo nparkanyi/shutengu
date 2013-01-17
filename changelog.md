@@ -1,6 +1,23 @@
 Changes to Shutengu!!
 =====================
 
+0.16 Jan 16 2012
+------------------
++ Added new menu screen
++ Added dedicated game over screen
++ Added new ship graphic
++ Added new bullet graphic
++ Added notification for new high score
+* Redesigned wave 0 instructions
+* Various text now rendered as `Blended` instead of `Shaded`
+* Merged together split code
+* Fixed inconsistent bit depth in images
+* Fixed title bar displaying wrong data in game over screen
+* Fonts now properly checked for errors when quitting
+* Reorganized functions
+* Music changes starting on wave 1 instead of wave 0
+* Music now stops playing on game over
+
 0.15 Jan 16 2012
 ----------------
 + Added score penalties
@@ -14,8 +31,6 @@ Changes to Shutengu!!
 + Added highscore
 * Fixed slight errors in counting
 * Changed size of the player's ship
-+ Added death sound
-
 
 0.14 Jan 16 2012
 ----------------
