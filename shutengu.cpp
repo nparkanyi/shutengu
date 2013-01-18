@@ -471,6 +471,7 @@ void resetGame(){
 		iScore++;
 		tmScore.start();
 	}
+
 }
 
 void renderHUD() {
@@ -666,12 +667,15 @@ int main(int argc,char* args[]) {
 			}
 
 			//update screen data
-			myship.move(tmDelta.getTicks());   //update ship's position
+			myship.move(tmDelta.getTicks());    //update ship's position
 			tmDelta.start();                    //restart change of time timer
 			printb(0,0,sfBG,sfScreen);          //print background
 			myship.show();                      //print position to screen
 
-			if(waveZero==true) printb(0,0,sfHowTo,sfScreen,NULL);
+			if(waveZero==true){					//reset bullets to original when looping game
+			printb(0,0,sfHowTo,sfScreen,NULL);
+			iMaxBul=-1;
+			}
 
 			for(i=0; i<=iMaxBul; i++) {
 				if(isCol(myship.hitbox,b[i].hitbox)) {
