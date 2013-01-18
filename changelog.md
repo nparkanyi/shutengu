@@ -1,6 +1,11 @@
 Changes to Shutengu!!
 =====================
 
+0.16.5 Jan 18 2012
+------------------
+* Adjusted game over screen
+* `.txt` files replaced with `.WhyCantIHoldAllTheseFileExtensions`
+
 0.16.4 Jan 17 2012
 ------------------
 + Added window icon

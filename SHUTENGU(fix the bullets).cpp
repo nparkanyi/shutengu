@@ -56,6 +56,7 @@ Mix_Chunk *chBomb=NULL;
 TTF_Font *fnMenu=NULL;
 TTF_Font *fnHUD=NULL;
 TTF_Font *fnHighScore=NULL;
+TTF_Font *fnFinalScore=NULL;
 SDL_Color clDefault= {0,0,0};
 SDL_Color clMenu= {0xff,0xff,0xff};
 SDL_Color clScore= {0xff,0xff,0xff};
@@ -71,24 +72,31 @@ SDL_Event event;
 //lists ship properties
 class ship {;
     public:
-    	int xVel, yVel;     //velocity
+    	int xVel, yVel;                         //velocity
         SDL_Rect hitbox;
-        ship();             //initializes
-        void handleInput();//handles keyboard controls for the ship
-        void move(Uint32 deltaTicks);        //handles motion
-        void show();        //renders ship
+        ship();                                 //initializes
+        void handleInput();                     //handles keyboard controls for the ship
+        void move(Uint32 deltaTicks);           //handles motion
+        void show();                            //renders ship
 };
 
 struct bulletData {         //bullet structure
     SDL_Rect hitbox;		//SDL_Rect is a structure; this is a nested structure
     int xVel;
     int yVel;
+    void move(Uint32 deltaTicks);
 };
-
 //A STRUCTURE ARRAY!
 //it must be declared here in order for the bulletData data type to be valid
 bulletData b[200];
 
+void bulletData::move(Uint32 DeltaTicks){
+    int i;
+    for(i=0;i<iMaxBul;i++){
+        b[i].hitbox.x=((b[i].xVel)*100)*(DeltaTicks/1000.f);
+        b[i].hitbox.y=((b[i].yVel)*100)*(DeltaTicks/1000.f);
+    }
+}
 //lists timer properties
 class Timer {
     private:
@@ -143,6 +151,8 @@ bool init() {
 
 //initializes most game assets
 bool prepAssets() {
+    int i;
+
     //load images or return false if error
     sfMenu=IMG_Load("img/menu.png");
     sfShip=IMG_Load("img/gameship.png");
@@ -178,9 +188,11 @@ bool prepAssets() {
     fnMenu=TTF_OpenFont("envy.ttf",24);
     fnHUD=TTF_OpenFont("envy.ttf",46);
     fnHighScore=TTF_OpenFont("envy.ttf",24);
+    fnFinalScore=TTF_OpenFont("envy.ttf",64);
     if(fnMenu==NULL||
 		fnHUD==NULL||
-		fnHighScore==NULL) return false;
+		fnHighScore==NULL||
+		fnFinalScore==NULL) return false;
 
     //all is well
     return true;
@@ -220,6 +232,7 @@ void cleanUp() {
     TTF_CloseFont(fnMenu);
     TTF_CloseFont(fnHUD);
     TTF_CloseFont(fnHighScore);
+    TTF_CloseFont(fnFinalScore);
     TTF_Quit();
 
     //quit SDL
@@ -295,7 +308,7 @@ void nextWave() {
     iMaxBul+=2;                       //after every wave increase, the number of bullets increases
     b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
     b[iMaxBul].yVel=rand()%5+1;
-    b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
+    b[iMaxBul-1].xVel=rand()%10-5;    //sets the new bullet parameters
     b[iMaxBul-1].yVel=rand()%5+1;
     prepBullets();
 }
@@ -400,7 +413,6 @@ void ship::move(Uint32 DeltaTicks) {
     else if(hitbox.y+SHIP_HEIGHT>480){
         hitbox.y=460;
     }
-    //if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel*(DeltaTicks/1000.f);
 }
 
 //renders the ship
@@ -552,7 +564,7 @@ int main(int argc,char* args[]) {
     //read and store the string of appropriate language
     FILE *pLang;
     char strLang[25];       //language string
-    if((pLang=fopen("text/gr.txt","r"))!=NULL) {
+    if((pLang=fopen("text/gr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL) {
         if(fgets(strLang,25,pLang)==NULL) return 1;
     }
     fclose(pLang);
@@ -561,7 +573,7 @@ int main(int argc,char* args[]) {
 	//read and store current highscore
 	FILE *pHighScoreR;
 	char strHighScore[10];
-	if((pHighScoreR=fopen("text/highscore.txt","r"))!=NULL){
+	if((pHighScoreR=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
 		if(fgets(strHighScore,10,pHighScoreR)==NULL) return 1;
 	}
 	fclose(pHighScoreR);
@@ -674,7 +686,11 @@ int main(int argc,char* args[]) {
 				}
 			}
 
+
 			//update screen data
+			for(i=0;i<=iMaxBul;i++){
+                b[i].move(tmDelta.getTicks());
+			}
 			myship.move(tmDelta.getTicks());    //update ship's position
 			tmDelta.start();                    //restart change of time timer
 			printb(0,0,sfBG,sfScreen);          //print background
@@ -685,26 +701,27 @@ int main(int argc,char* args[]) {
 			iMaxBul=-1;
 			}
 
-			for(i=0; i<=iMaxBul; i++) {
-				if(isCol(myship.hitbox,b[i].hitbox)) {
-					iLife--;
-					if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
-					iBomb=3;
-					if(iLife==0) quitGame=true;
-					b[i].hitbox.x=rand()%420-120;
-					b[i].hitbox.y=0;
-				}
-				if(b[i].hitbox.x>515) b[i].hitbox.x=120;
-				if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
-				if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
-					b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
-					b[i].xVel=rand()%10-5;                      //bullet can travel left or right
-					b[i].yVel=rand()%5+1;                       //can only travel down
-				}
-				b[i].hitbox.y+=b[i].yVel;
-				b[i].hitbox.x+=b[i].xVel;
-				printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
-			}
+            for(i=0; i<=iMaxBul; i++) {
+                if(isCol(myship.hitbox,b[i].hitbox)) {
+                    iLife--;
+                    if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
+                    iBomb=3;
+                    if(iLife==0) quitGame=true;
+                    b[i].hitbox.x=rand()%420-120;
+                    b[i].hitbox.y=0;
+                }
+                if(b[i].hitbox.x>515) b[i].hitbox.x=120;
+                if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
+                if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
+                    b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
+                    b[i].xVel=rand()%10-5;                      //bullet can travel left or right
+                    b[i].yVel=rand()%5+1;                       //can only travel down
+                }
+                b[i].hitbox.y+=b[i].yVel;
+                b[i].hitbox.x+=b[i].xVel;
+                printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
+            }
+
 
 			//display all stats
 			renderHUD();
@@ -734,7 +751,7 @@ int main(int argc,char* args[]) {
 		//store new high score, if there is one
 		if(iScore>iHighScore){
 			FILE *pHighScoreW;
-			if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
+			if((pHighScoreW=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","w"))!=NULL){
 				if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
 			}
 			fclose(pHighScoreW);
@@ -768,20 +785,20 @@ int main(int argc,char* args[]) {
 			//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
 			std::stringstream finalScore;
 			finalScore<<iScore;
-			sfScore=TTF_RenderText_Blended(fnHUD,finalScore.str().c_str(),clWaves);
+			sfScore=TTF_RenderText_Blended(fnFinalScore,finalScore.str().c_str(),clMenu);
 
 			FILE *pRestart;
 			char strRestart[30];
-			if((pRestart=fopen("text/grr.txt","r"))!=NULL){
+			if((pRestart=fopen("text/grr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
 				if(fgets(strRestart,30,pRestart)==NULL) return 1;
 			}
 			fclose(pRestart);
 			sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
 
 			printb(0,0,sfOverBG,sfScreen,NULL);
-			printb((SCREEN_WIDTH-sfRestart->w)/2,315,sfRestart,sfScreen,NULL);
-			printb((SCREEN_WIDTH-sfScore->w)/2,200,sfScore,sfScreen,NULL);
-			if(newHighScore==true) printb(340,234,sfNewHigh,sfScreen,NULL);
+			printb((SCREEN_WIDTH-sfRestart->w)/2,385,sfRestart,sfScreen,NULL);
+			printb((SCREEN_WIDTH-sfScore->w)/2,240,sfScore,sfScreen,NULL);
+			if(newHighScore==true)	printb(430,280,sfNewHigh,sfScreen,NULL);
 
 			//refresh the screen
 			if(SDL_Flip(sfScreen)==-1) return 1;
