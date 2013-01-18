@@ -80,7 +80,7 @@ class ship {
 };
 
 struct bulletData {         //bullet structure
-    SDL_Rect hitbox;
+    SDL_Rect hitbox;		//SDL_Rect is a structure; this is a nested structure
     int xVel;
     int yVel;
 };
