@@ -1,6 +1,14 @@
 Changes to Shutengu!!
 =====================
 
+0.16.4 Jan 17 2012
+------------------
++ Added window icon
++ Added default cases to all switches to avoid compiler junk
++ Added CodeBlocks project for tentative organization
+- Removed console window behind game window
+* Fixed so many bugs involving strange behaviour when restarting
+
 0.16.3 Jan 17 2012
 ------------------
 * Fixed some stats not resetting on game restart

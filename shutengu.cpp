@@ -119,6 +119,11 @@ bool init() {
     //all SDL defaults or return false if error
     if(SDL_Init(SDL_INIT_EVERYTHING)==-1) return false;
 
+	SDL_Surface *sfAppIcon=IMG_Load("img/appico.png");
+	if(sfAppIcon==NULL) return false;
+	SDL_WM_SetIcon(sfAppIcon,NULL);
+	SDL_FreeSurface(sfAppIcon);
+
     //init screen or return false if error
     sfScreen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_SWSURFACE);
     if(sfScreen==NULL) return false;
@@ -257,6 +262,7 @@ bool newBGM() {
         case 9:
             muBGM=Mix_LoadMUS("audio/pounds.wav");
             break;
+		default:;
     }
 
     //play it or return false if error
@@ -352,6 +358,7 @@ void ship::handleInput() {
             case SDLK_RIGHT:
                 xVel+=SHIP_SPEED;
                 break;
+			default:;
         }
     }
 
@@ -370,6 +377,7 @@ void ship::handleInput() {
             case SDLK_RIGHT:
                 xVel -=SHIP_SPEED;
                 break;
+			default:;
         }
     }
 }
@@ -580,6 +588,7 @@ int main(int argc,char* args[]) {
 						quitOver=true;
 						quitAll=true;
 						break;
+					default:;
 				}
 			}
 
@@ -655,6 +664,7 @@ int main(int argc,char* args[]) {
 						case SDLK_x:
 							if(useBomb()==false) return 1;
 							break;
+						default:;
 					}
 				}
 
@@ -746,6 +756,7 @@ int main(int argc,char* args[]) {
 							quitOver=true;
 							quitAll=true;
 							break;
+						default:;
 					}
 				}
 
