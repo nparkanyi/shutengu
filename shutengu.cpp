@@ -20,7 +20,7 @@ const int FRAMES_PER_SECOND=60;
 //ship attributes
 const int SHIP_WIDTH=20;
 const int SHIP_HEIGHT=20;
-const int SHIP_SPEED=3;
+const int SHIP_SPEED=200;
 
 //wave timer
 const int WAVE_LENGTH=30000;        //we must increase the frequency
@@ -43,8 +43,10 @@ SDL_Surface *sfWavesIcon=NULL;
 SDL_Surface *sfHowTo=NULL;
 SDL_Surface *sfHighScore=NULL;
 SDL_Surface *sfRestart=NULL;
+SDL_Surface *sfOverBG=NULL;
+SDL_Surface *sfNewHigh=NULL;
 
-//the award-winning soundtracks
+//the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
 Mix_Chunk *chDeath=NULL;
 Mix_Chunk *chGain=NULL;
@@ -55,7 +57,7 @@ TTF_Font *fnMenu=NULL;
 TTF_Font *fnHUD=NULL;
 TTF_Font *fnHighScore=NULL;
 SDL_Color clDefault= {0,0,0};
-SDL_Color clMenuBG= {0xff,0xff,0xff};
+SDL_Color clMenu= {0xff,0xff,0xff};
 SDL_Color clScore= {0xff,0xff,0xff};
 SDL_Color clHighScore= {0xcc,0xcc,0xcc};
 SDL_Color clWaves= {0xaf,0xdd,0xe9};
@@ -75,7 +77,7 @@ class ship {
         SDL_Rect hitbox;
         ship();             //initializes
         void handleInput();//handles keyboard controls for the ship
-        void move();        //handles motion
+        void move(Uint32 deltaTicks);        //handles motion
         void show();        //renders ship
 };
 
@@ -85,7 +87,9 @@ struct bulletData {         //bullet structure
     int yVel;
 };
 
-bulletData b[200];			//ARRAYS OF THIS STRUCTURE
+//A STRUCTURE ARRAY!
+//it must be declared here in order for the bulletData data type to be valid
+bulletData b[200];
 
 //lists timer properties
 class Timer {
@@ -147,51 +151,38 @@ bool prepAssets() {
     sfBombsIcon=IMG_Load("img/bombs.png");
     sfWavesIcon=IMG_Load("img/waves.png");
     sfHowTo=IMG_Load("img/howto.png");
+    sfOverBG=IMG_Load("img/gameover.png");
+    sfNewHigh=IMG_Load("img/newhigh.png");
     if(sfMenu==NULL||
-            sfShip==NULL||
-            sfBG==NULL||
-            sfBullet==NULL||
-            sfLivesIcon==NULL||
-            sfWavesIcon==NULL||
-            sfHowTo==NULL) return false;
+		sfShip==NULL||
+		sfBG==NULL||
+		sfBullet==NULL||
+		sfLivesIcon==NULL||
+		sfWavesIcon==NULL||
+		sfHowTo==NULL||
+		sfOverBG==NULL||
+		sfNewHigh==NULL) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
     chGain=Mix_LoadWAV("audio/1up.wav");
     chBomb=Mix_LoadWAV("audio/boom.wav");
     chDeath=Mix_LoadWAV("audio/death.wav");
-    if((muBGM==NULL)||(chGain==NULL)||(chBomb==NULL)) return false;
+    if(muBGM==NULL||
+		chGain==NULL||
+		chBomb==NULL||
+		chDeath==NULL) return false;
 
     //open fonts or return false if error
     fnMenu=TTF_OpenFont("envy.ttf",24);
     fnHUD=TTF_OpenFont("envy.ttf",46);
     fnHighScore=TTF_OpenFont("envy.ttf",24);
-    if((fnMenu==NULL)) return false;
+    if(fnMenu==NULL||
+		fnHUD==NULL||
+		fnHighScore==NULL) return false;
 
     //all is well
     return true;
-}
-
-//sets values for all new bullets
-bool prepBullets() {
-    int i;
-
-    for(i=0; i<=iMaxBul; i++) {
-        b[iMaxBul].hitbox.x=rand()%420+120;
-        b[iMaxBul].hitbox.h=5;
-        b[iMaxBul].hitbox.w=5;
-        b[iMaxBul].hitbox.y=0;
-    }
-}
-
-//randomizes all starting bullets
-bool randBullets() {
-    int i;
-
-    for(i=0; i<iMaxBul; i++) {
-        b[i].xVel=rand()%5+1;
-        b[i].yVel=rand()%5+1;
-    }
 }
 
 //unloads assets and closes SDL subsystems
@@ -214,11 +205,14 @@ void cleanUp() {
     SDL_FreeSurface(sfHowTo);
     SDL_FreeSurface(sfHighScore);
     SDL_FreeSurface(sfRestart);
+    SDL_FreeSurface(sfOverBG);
+    SDL_FreeSurface(sfNewHigh);
 
     //free all audio
     Mix_FreeMusic(muBGM);
     Mix_FreeChunk(chGain);
     Mix_FreeChunk(chBomb);
+    Mix_FreeChunk(chDeath);
     Mix_CloseAudio();
 
     //close all fonts
@@ -274,6 +268,26 @@ bool newBGM() {
     return true;
 }
 
+//sets values for all new bullets
+bool prepBullets() {
+    int i;
+    for(i=0; i<=iMaxBul; i++) {
+        b[iMaxBul].hitbox.x=rand()%420+120;
+        b[iMaxBul].hitbox.h=5;
+        b[iMaxBul].hitbox.w=5;
+        b[iMaxBul].hitbox.y=0;
+    }
+}
+
+//randomizes all starting bullets
+bool randBullets() {
+    int i;
+    for(i=0; i<iMaxBul; i++) {
+        b[i].xVel=rand()%5+1;
+        b[i].yVel=rand()%5+1;
+    }
+}
+
 void nextWave() {
     newBGM();
     iMaxBul+=2;                       //after every wave increase, the number of bullets increases
@@ -322,18 +336,20 @@ ship::ship() {
 }
 
 //responds to keypresses involving the ship
+//73 is the magic number that prevents ship moving bugs
+//the game prefers the ship's top left corner for some reason
 void ship::handleInput() {
     //key is pressed
     if(event.type==SDL_KEYDOWN) {
         switch(event.key.keysym.sym) {
             case SDLK_UP:
-                yVel-=SHIP_SPEED;
+                yVel-=SHIP_SPEED-73;
                 break;
             case SDLK_DOWN:
                 yVel+=SHIP_SPEED;
                 break;
             case SDLK_LEFT:
-                xVel-=SHIP_SPEED;
+                xVel-=SHIP_SPEED-73;
                 break;
             case SDLK_RIGHT:
                 xVel+=SHIP_SPEED;
@@ -345,13 +361,13 @@ void ship::handleInput() {
     if(event.type==SDL_KEYUP) {
         switch(event.key.keysym.sym) {
             case SDLK_UP:
-                yVel +=SHIP_SPEED;
+                yVel +=SHIP_SPEED-73;
                 break;
             case SDLK_DOWN:
                 yVel -=SHIP_SPEED;
                 break;
             case SDLK_LEFT:
-                xVel +=SHIP_SPEED;
+                xVel +=SHIP_SPEED-73;
                 break;
             case SDLK_RIGHT:
                 xVel -=SHIP_SPEED;
@@ -361,14 +377,26 @@ void ship::handleInput() {
 }
 
 //controls ship movement
-void ship::move() {
+void ship::move(Uint32 DeltaTicks) {
     //horizontal motion: stop the ship if out of bounds
-    hitbox.x+=xVel;
-    if((hitbox.x<120)||(hitbox.x+SHIP_WIDTH>520)) hitbox.x-=xVel;
+    //setting ship's movement to only be dependent on time
+    hitbox.x+=xVel*(DeltaTicks/1000.f);
+    if(hitbox.x<120){
+        hitbox.x=120;
+    }
+    else if(hitbox.x+SHIP_WIDTH>520){
+        hitbox.x=500;
+    }
 
     //vertical motion: stop the ship if out of bounds
-    hitbox.y+=yVel;
-    if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel;
+    hitbox.y+=yVel*(DeltaTicks/1000.f);
+    if(hitbox.y<0){
+        hitbox.y=0;
+    }
+    else if(hitbox.y+SHIP_HEIGHT>480){
+        hitbox.y=460;
+    }
+    //if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel*(DeltaTicks/1000.f);
 }
 
 //renders the ship
@@ -403,14 +431,31 @@ int Timer::getTicks() {
     return 0;
 }
 
-//stats
+//changeable game data
 int iHighScore=0;       //highscore variable
 bool waveZero=true;     //determines setup time
 int iLife=3;            //life counts
 int iBomb=3;            //bomb counter
 int iWave=0;            //wave counter
 int iScore=0;           //score counter
+bool quitMenu=false;    //maintains menu loop
+bool quitGame=false;    //maintains game loop
+bool quitOver=false;    //maintains game over loop
+bool quitAll=false;	    //allows player to replay
+bool newHighScore=false;//true if player has beaten the new high score
 Timer tmTime;           //time until next wave
+
+void resetGame(){
+	waveZero=true;
+	iLife=3;
+	iBomb=3;
+	iWave=0;
+	iScore=0;
+	quitGame=false;
+	quitOver=false;
+	newHighScore=false;
+	iMaxBul=(-1);
+}
 
 void renderHUD() {
     //display the score
@@ -448,22 +493,34 @@ void renderHUD() {
     printb(530,438,sfLivesIcon,sfScreen);
 }
 
-int main(int argc,char* args[]) {
-    srand(time(NULL));      //spin the wheel!
-    int i;                  //loop counter
+bool useBomb(){
+	int i;
 
-    //game state control
-    bool quitMenu=false;    //maintains menu loop
-    bool quitGame=false;    //maintains game loop
-    bool quitOver=false;    //maintains game over loop
-    bool Replay=true;		//allows game play looping
+	if(iBomb>0) {
+		iBomb--;
+		for(i=0; i<=iMaxBul; i++) {
+			b[i].hitbox.y=-480;
+			b[i].xVel=rand()%10-5;
+			b[i].yVel=rand()%5+1;
+		}
+		iScore-=50;
+		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
+	}
+	return true;
+}
+
+int main(int argc,char* args[]) {
+    srand(time(NULL));  	//spin the wheel!
+    int i;                  //loop counter
 
     //timers
     Timer tmFPS;            //controls frame rate
-    Timer tmFPSUpd;           //total fps updates
+    Timer tmFPSUpd;         //total fps updates
     Timer tmScore;          //frequency of score increase
+    Timer tmDelta;          //track the change in time
 
-    int frame=0;            //total frames past
+	int frame=0;            //total frames past
+
     ship myship;            //user-controlled ship
 
     if(init()==false) return 1;
@@ -472,12 +529,12 @@ int main(int argc,char* args[]) {
 
     //read and store the string of appropriate language
     FILE *pLang;
-    char strFile[25];       //language string
-    if((pLang=fopen("text/fr.txt","r"))!=NULL) {
-        if(fgets(strFile,25,pLang)==NULL) return 1;
+    char strLang[25];       //language string
+    if((pLang=fopen("text/gr.txt","r"))!=NULL) {
+        if(fgets(strLang,25,pLang)==NULL) return 1;
     }
     fclose(pLang);
-    sfMenuPrompt=TTF_RenderText_Shaded(fnMenu,strFile,clDefault,clMenuBG);
+    sfMenuPrompt=TTF_RenderText_Blended(fnMenu,strLang,clMenu);
 
 	//read and store current highscore
 	FILE *pHighScoreR;
@@ -489,13 +546,11 @@ int main(int argc,char* args[]) {
 	sfHighScore=TTF_RenderText_Shaded(fnHighScore,strHighScore,clHighScore,clDefault);
 	iHighScore=atoi(strHighScore);		//string contents as an int
 
-    randBullets();
-
 	//menu runs here
 	while(quitMenu==false) {
 		//display menu
-		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,400,sfMenuPrompt,sfMenu);
 		printb(0,0,sfMenu,sfScreen);
+		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,315,sfMenuPrompt,sfScreen);
 		//menu-only key controls
 		while(SDL_PollEvent(&event)) {
 			if(event.type==SDL_KEYDOWN) {
@@ -507,6 +562,7 @@ int main(int argc,char* args[]) {
 						quitMenu=true;
 						quitGame=true;
 						quitOver=true;
+						quitAll=true;
 						break;
 				}
 			}
@@ -516,6 +572,7 @@ int main(int argc,char* args[]) {
 				quitMenu=true;          //quit the menu
 				quitGame=true;          //skip the game
 				quitOver=true;
+				quitAll=true;
 			}
 		}
 
@@ -526,180 +583,187 @@ int main(int argc,char* args[]) {
 	tmTime.start();
 	tmFPS.start();
 	tmFPSUpd.start();
-	newBGM();
+	tmDelta.start();
 
-	//game runs here
-	while(quitGame==false) {
-		//once wave time is up: level up and restart wave timer
-		//setup phase is active
-		if(waveZero==true&&tmTime.getTicks()>10000) {
-			iWave++;
-			nextWave();
-			tmTime.start();
-			waveZero=false;
-			tmScore.start();
-		}
-		//setup phase is off
-		else if(tmTime.getTicks()>WAVE_LENGTH) {
-			iWave++;
-			nextWave();
-			tmTime.start();
-		}
+//REPLAY LOOP
+	while(quitAll==false){
+		randBullets();
+		//game runs here
+		while(quitGame==false) {
+			//once wave time is up: level up and restart wave timer
+			//setup phase is active
+			if(waveZero==true&&tmTime.getTicks()>10000) {
+				iWave++;
+				nextWave();
+				tmTime.start();
+				waveZero=false;
+				newBGM();
+				tmScore.start();
+			}
+			//setup phase is off
+			else if(tmTime.getTicks()>WAVE_LENGTH) {
+				iWave++;
+				nextWave();
+				tmTime.start();
+			}
 
-		//score timing
-		if(tmScore.getTicks()>250){
-			iScore++;
-			tmScore.start();
-		}
+			//score timing
+			if(tmScore.getTicks()>250){
+				iScore++;
+				tmScore.start();
+			}
 
-		//1up timing (and avoid a math error)
-		if(iScore%360==0&&iScore!=0) {
-			iLife++;
+			//1up timing (and avoid a math error)
+			if(iScore%360==0&&iScore!=0) {
+				iLife++;
 
-			//don't let player have too many lives
-			//if 1up is allowed, play sound
-			if(iLife>5)iLife=5;
-			else if(Mix_PlayChannel(-1,chGain,0)==-1) return 1;
-		}
+				//don't let player have too many lives
+				//if 1up is allowed, play sound
+				if(iLife>5)iLife=5;
+				else if(Mix_PlayChannel(-1,chGain,0)==-1) return 1;
+			}
 
-		//while there's science to do
-		while(SDL_PollEvent(&event)) {
-			//ship controls
-			myship.handleInput();
+			//while there's science to do
+			while(SDL_PollEvent(&event)) {
+				//ship controls
+				myship.handleInput();
 
-			//other controls
-			if(event.type==SDL_KEYDOWN) {
-				switch(event.key.keysym.sym) {
-					case SDLK_ESCAPE:
-						quitGame=true;
-						quitOver=true;
-						break;
-					case SDLK_x:
-						if(iBomb>0) {
-							iBomb--;
-							for(i=0; i<=iMaxBul; i++) {
-								b[i].hitbox.y=-480;
-								b[i].xVel=rand()%10-5;
-								b[i].yVel=rand()%5+1;
-							}
-							iScore-=50;
-							if(Mix_PlayChannel(-1,chBomb,0)==-1) return 1;
+				//other controls
+				if(event.type==SDL_KEYDOWN) {
+					switch(event.key.keysym.sym) {
+						case SDLK_ESCAPE:
+							quitGame=true;
+							quitOver=true;
+							quitAll=true;
 							break;
-						}
+						case SDLK_x:
+							if(useBomb()==false) return 1;
+							break;
+					}
+				}
+
+				//if the window gets X'd
+				if(event.type == SDL_QUIT) {
+					quitGame = true;
+					quitOver=true;
+					quitAll=true;
 				}
 			}
 
-			//if the window gets X'd
-			if(event.type == SDL_QUIT) {
-				quitGame = true;
-				quitOver=true;
-			}
-		}
+			//update screen data
+			myship.move(tmDelta.getTicks());   //update ship's position
+			tmDelta.start();                    //restart change of time timer
+			printb(0,0,sfBG,sfScreen);          //print background
+			myship.show();                      //print position to screen
 
-		//update screen data
-		myship.move();                          //update ship's position
-		printb(0,0,sfBG,sfScreen);          //print background
-		myship.show();                          //print position to screen
+			if(waveZero==true) printb(0,0,sfHowTo,sfScreen,NULL);
 
-		if(waveZero==true) printb(0,0,sfHowTo,sfScreen,NULL);
-
-		for(i=0; i<=iMaxBul; i++) {
-			if(isCol(myship.hitbox,b[i].hitbox)) {
-				iLife--;
-				if(Mix_PlayChannel(-1,chDeath,0)==-1)
-				iBomb=3;
-				if(iLife==0) {
-					quitGame=true;
+			for(i=0; i<=iMaxBul; i++) {
+				if(isCol(myship.hitbox,b[i].hitbox)) {
+					iLife--;
+					if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
+					iBomb=3;
+					if(iLife==0) quitGame=true;
+					b[i].hitbox.x=rand()%420-120;
+					b[i].hitbox.y=0;
 				}
-				b[i].hitbox.x=rand()%420-120;
-				b[i].hitbox.y=0;
+				if(b[i].hitbox.x>515) b[i].hitbox.x=120;
+				if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
+				if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
+					b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
+					b[i].xVel=rand()%10-5;                      //bullet can travel left or right
+					b[i].yVel=rand()%5+1;                       //can only travel down
+				}
+				b[i].hitbox.y+=b[i].yVel;
+				b[i].hitbox.x+=b[i].xVel;
+				printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
 			}
-			if(b[i].hitbox.x>515) b[i].hitbox.x=120;
-			if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
-			if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
-				b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
-				b[i].xVel=rand()%10-5;                      //bullet can travel left or right
-				b[i].yVel=rand()%5+1;                       //can only travel down
+
+			//display all stats
+			renderHUD();
+			printb(7,50,sfHighScore,sfScreen,NULL);
+
+			//refresh the screen
+			if(SDL_Flip(sfScreen)==-1) return 1;
+
+			//limit the frame rate
+			if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
+				printf("slowing!");
+				SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
+				tmFPS.start();
 			}
-			b[i].hitbox.y+=b[i].yVel;
-			b[i].hitbox.x+=b[i].xVel;
-			printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
+
+			frame++;    //one frame passed
+
+			//update this once per second
+			if(tmFPSUpd.getTicks()>1000) {
+				std::stringstream newCaption;
+				newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
+				SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
+				tmFPSUpd.start();         //restart for the next one-second wait
+			}
 		}
 
-		//display all stats
-		renderHUD();
-		printb(7,50,sfHighScore,sfScreen,NULL);
-
-		//refresh the screen
-		if(SDL_Flip(sfScreen)==-1) return 1;
-
-		//limit the frame rate
-		if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
-			SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
-			tmFPS.start();
+		//store new high score, if there is one
+		if(iScore>iHighScore){
+			FILE *pHighScoreW;
+			if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
+				if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
+			}
+			fclose(pHighScoreW);
+			newHighScore=true;
 		}
 
-		frame++;    //one frame passed
+		//stop playing music
+		Mix_HaltMusic();
 
-		//update this once per second
-		if(tmFPSUpd.getTicks()>1000) {
-			std::stringstream newCaption;
-			newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
-			SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
-			tmFPSUpd.start();         //restart for the next one-second wait
-		}
-	}
+		//game over runs here
+		while(quitOver==false) {
+			while(SDL_PollEvent(&event)) {
+				if(event.type==SDL_KEYDOWN) {
+					switch(event.key.keysym.sym) {
+						case SDLK_RETURN: quitOver=true; break;
+						case SDLK_ESCAPE:
+							quitOver=true;
+							quitAll=true;
+							break;
+					}
+				}
 
-	//store new high score, if there is one
-	if(iScore>iHighScore){
-		FILE *pHighScoreW;
-		if((pHighScoreW=fopen("text/highscore.txt","w"))!=NULL){
-			if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
-		}
-		fclose(pHighScoreW);
-	}
-
-	//game over runs here
-	while(quitOver==false) {
-		while(SDL_PollEvent(&event)) {
-			if(event.type==SDL_KEYDOWN) {
-				switch(event.key.keysym.sym) {
-					case SDLK_ESCAPE:
-						quitOver=true;
-						break;
+				//if the window gets X'd
+				if(event.type == SDL_QUIT){
+					quitOver=true;
+					quitAll=true;
 				}
 			}
 
-			//if the window gets X'd
-			if(event.type == SDL_QUIT) quitOver=true;
-		}
+			//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
+			std::stringstream finalScore;
+			finalScore<<iScore;
+			sfScore=TTF_RenderText_Blended(fnHUD,finalScore.str().c_str(),clWaves);
 
-		//display end stats
-		std::stringstream overStr;
-		overStr<<"GAME OVER";
-		sfScore=TTF_RenderText_Shaded(fnHUD,overStr.str().c_str(),clScore,clDefault);
-
-		sfRestart=TTF_RenderText_Shaded(fnHUD,"Z TO RESTART",clScore,clDefault);
-		if(event.type==SDL_KEYDOWN){
-			if(event.key.keysym.sym==SDLK_z){
-				Replay=true;
+			FILE *pRestart;
+			char strRestart[30];
+			if((pRestart=fopen("text/grr.txt","r"))!=NULL){
+				if(fgets(strRestart,30,pRestart)==NULL) return 1;
 			}
+			fclose(pRestart);
+			sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
+
+			printb(0,0,sfOverBG,sfScreen,NULL);
+			printb((SCREEN_WIDTH-sfRestart->w)/2,315,sfRestart,sfScreen,NULL);
+			printb((SCREEN_WIDTH-sfScore->w)/2,200,sfScore,sfScreen,NULL);
+			if(newHighScore==true) printb(340,234,sfNewHigh,sfScreen,NULL);
+
+			//refresh the screen
+			if(SDL_Flip(sfScreen)==-1) return 1;
+
+			SDL_WM_SetCaption("Shutengu!!",NULL);
 		}
 
-		std::stringstream finalScore;
-		finalScore<<iScore;
-		sfTime=TTF_RenderText_Shaded(fnHUD,finalScore.str().c_str(),clTime,clDefault);
-
-		printb(120,130,sfScore,sfBG,NULL);
-		printb(120,180,sfTime,sfBG,NULL);
-		printb(120,310,sfRestart,sfBG,NULL);
-		printb(0,0,sfBG,sfScreen,NULL);
-
-		//refresh the screen
-		if(SDL_Flip(sfScreen)==-1) return 1;
+		//reset loop conditions to allow replaying
+		resetGame();
 	}
-
-
     //user has now quit
     cleanUp();
 
