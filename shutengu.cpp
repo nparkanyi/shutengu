@@ -69,11 +69,9 @@ SDL_Color clLives= {0xe9,0xaf,0xaf};
 SDL_Event event;
 
 //lists ship properties
-class ship {
-    private:
-        int xVel, yVel;     //velocity
-
+class ship {;
     public:
+    	int xVel, yVel;     //velocity
         SDL_Rect hitbox;
         ship();             //initializes
         void handleInput();//handles keyboard controls for the ship
@@ -327,7 +325,7 @@ bool isCol(SDL_Rect rectA,SDL_Rect rectB) {
 
 //initializes ship's properties
 ship::ship() {
-    hitbox.x=(640-SHIP_WIDTH)/2;
+    hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
     hitbox.y=400;
     hitbox.h=SHIP_HEIGHT;
     hitbox.w=SHIP_WIDTH;
@@ -418,7 +416,13 @@ void Timer::start() {
     paused = false;             //it is not paused
     startTicks = SDL_GetTicks();//time when timer was started
 }
+void Timer::stop(){
+    //Stop the timer
+    started = false;
 
+    //Unpause the timer
+    paused = false;
+}
 //finds time since timer start
 int Timer::getTicks() {
     //run only if timer is active
@@ -443,9 +447,12 @@ bool quitGame=false;    //maintains game loop
 bool quitOver=false;    //maintains game over loop
 bool quitAll=false;	    //allows player to replay
 bool newHighScore=false;//true if player has beaten the new high score
+ship myship;            //user-controlled ship
 Timer tmTime;           //time until next wave
+Timer tmScore;          //frequency of score increase
 
 void resetGame(){
+	tmTime.start();
 	waveZero=true;
 	iLife=3;
 	iBomb=3;
@@ -454,7 +461,16 @@ void resetGame(){
 	quitGame=false;
 	quitOver=false;
 	newHighScore=false;
-	iMaxBul=(-1);
+	iMaxBul=-1;
+	myship.xVel=0;
+	myship.yVel=0;
+	myship.hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
+    myship.hitbox.y=400;
+	tmScore.stop();
+    if(tmScore.getTicks()>250){
+		iScore++;
+		tmScore.start();
+	}
 }
 
 void renderHUD() {
@@ -516,12 +532,11 @@ int main(int argc,char* args[]) {
     //timers
     Timer tmFPS;            //controls frame rate
     Timer tmFPSUpd;         //total fps updates
-    Timer tmScore;          //frequency of score increase
     Timer tmDelta;          //track the change in time
 
 	int frame=0;            //total frames past
 
-    ship myship;            //user-controlled ship
+    //ship myship;            //user-controlled ship
 
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
