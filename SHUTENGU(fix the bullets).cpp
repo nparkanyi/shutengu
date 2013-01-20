@@ -84,19 +84,11 @@ struct bulletData {         //bullet structure
     SDL_Rect hitbox;		//SDL_Rect is a structure; this is a nested structure
     int xVel;
     int yVel;
-    void move(Uint32 deltaTicks);
 };
 //A STRUCTURE ARRAY!
 //it must be declared here in order for the bulletData data type to be valid
 bulletData b[200];
 
-void bulletData::move(Uint32 DeltaTicks){
-    int i;
-    for(i=0;i<iMaxBul;i++){
-        b[i].hitbox.x=((b[i].xVel)*100)*(DeltaTicks/1000.f);
-        b[i].hitbox.y=((b[i].yVel)*100)*(DeltaTicks/1000.f);
-    }
-}
 //lists timer properties
 class Timer {
     private:
@@ -298,18 +290,18 @@ void prepBullets() {
 void randBullets() {
     int i;
     for(i=0; i<iMaxBul; i++) {
-        b[i].xVel=rand()%5+1;
-        b[i].yVel=rand()%5+1;
+        b[i].xVel=rand()%2+1;
+        b[i].yVel=rand()%2+1;
     }
 }
 
 void nextWave() {
     newBGM();
     iMaxBul+=2;                       //after every wave increase, the number of bullets increases
-    b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
-    b[iMaxBul].yVel=rand()%5+1;
-    b[iMaxBul-1].xVel=rand()%10-5;    //sets the new bullet parameters
-    b[iMaxBul-1].yVel=rand()%5+1;
+    b[iMaxBul].xVel=rand()%5-2;      //sets the new bullet parameters
+    b[iMaxBul].yVel=rand()%2+1;
+    b[iMaxBul-1].xVel=rand()%5-2;    //sets the new bullet parameters
+    b[iMaxBul-1].yVel=rand()%2+1;
     prepBullets();
 }
 
@@ -535,8 +527,8 @@ bool useBomb(){
 		iBomb--;
 		for(i=0; i<=iMaxBul; i++) {
 			b[i].hitbox.y=-480;
-			b[i].xVel=rand()%10-5;
-			b[i].yVel=rand()%5+1;
+			b[i].xVel=rand()%5-2;
+			b[i].yVel=rand()%2+1;
 		}
 		iScore-=50;
 		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
@@ -689,7 +681,6 @@ int main(int argc,char* args[]) {
 
 			//update screen data
 			for(i=0;i<=iMaxBul;i++){
-                b[i].move(tmDelta.getTicks());
 			}
 			myship.move(tmDelta.getTicks());    //update ship's position
 			tmDelta.start();                    //restart change of time timer
@@ -714,8 +705,8 @@ int main(int argc,char* args[]) {
                 if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
                 if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
                     b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
-                    b[i].xVel=rand()%10-5;                      //bullet can travel left or right
-                    b[i].yVel=rand()%5+1;                       //can only travel down
+                    b[i].xVel=rand()%5-2;                      //bullet can travel left or right
+                    b[i].yVel=rand()%2+1;                       //can only travel down
                 }
                 b[i].hitbox.y+=b[i].yVel;
                 b[i].hitbox.x+=b[i].xVel;
@@ -732,7 +723,6 @@ int main(int argc,char* args[]) {
 
 			//limit the frame rate
 			if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
-				printf("slowing!");
 				SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
 				tmFPS.start();
 			}
@@ -782,7 +772,7 @@ int main(int argc,char* args[]) {
 				}
 			}
 
-			//ACTUALLY CLEAN THIS UP AND MAKE SEPARATE SURFACES AND FONTS
+			//end surfaces
 			std::stringstream finalScore;
 			finalScore<<iScore;
 			sfScore=TTF_RenderText_Blended(fnFinalScore,finalScore.str().c_str(),clMenu);
