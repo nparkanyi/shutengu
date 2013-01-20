@@ -400,7 +400,6 @@ void ship::move(Uint32 DeltaTicks) {
     else if(hitbox.y+SHIP_HEIGHT>480){
         hitbox.y=460;
     }
-    //if((hitbox.y<0)||(hitbox.y+SHIP_HEIGHT>SCREEN_HEIGHT)) hitbox.y-=yVel*(DeltaTicks/1000.f);
 }
 
 //renders the ship
@@ -608,7 +607,7 @@ int main(int argc,char* args[]) {
 	tmFPSUpd.start();
 	tmDelta.start();
 
-//REPLAY LOOP
+	//REPLAY LOOP
 	while(quitAll==false){
 		randBullets();
 		//game runs here
