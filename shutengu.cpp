@@ -285,18 +285,18 @@ void prepBullets() {
 void randBullets() {
     int i;
     for(i=0; i<iMaxBul; i++) {
-        b[i].xVel=rand()%2+1;
-        b[i].yVel=rand()%2+1;
+        b[i].xVel=rand()%5+1;
+        b[i].yVel=rand()%5+1;
     }
 }
 
 void nextWave() {
     newBGM();
     iMaxBul+=2;                       //after every wave increase, the number of bullets increases
-    b[iMaxBul].xVel=rand()%5-2;      //sets the new bullet parameters
-    b[iMaxBul].yVel=rand()%2+1;
-    b[iMaxBul-1].xVel=rand()%5-1;    //sets the new bullet parameters
-    b[iMaxBul-1].yVel=rand()%2+1;
+    b[iMaxBul].xVel=rand()%10-5;      //sets the new bullet parameters
+    b[iMaxBul].yVel=rand()%5+1;
+    b[iMaxBul-1].xVel=rand()%10-5;        //sets the new bullet parameters
+    b[iMaxBul-1].yVel=rand()%5+1;
     prepBullets();
 }
 
@@ -522,8 +522,8 @@ bool useBomb(){
 		iBomb--;
 		for(i=0; i<=iMaxBul; i++) {
 			b[i].hitbox.y=-480;
-			b[i].xVel=rand()%5-2;
-			b[i].yVel=rand()%2+1;
+			b[i].xVel=rand()%10-5;
+			b[i].yVel=rand()%5+1;
 		}
 		iScore-=50;
 		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
@@ -697,8 +697,8 @@ int main(int argc,char* args[]) {
 				if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
 				if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
 					b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
-					b[i].xVel=rand()%5-2;                      //bullet can travel left or right
-					b[i].yVel=rand()%2+1;                       //can only travel down
+					b[i].xVel=rand()%10-5;                      //bullet can travel left or right
+					b[i].yVel=rand()%5+1;                       //can only travel down
 				}
 				b[i].hitbox.y+=b[i].yVel;
 				b[i].hitbox.x+=b[i].xVel;
@@ -713,7 +713,8 @@ int main(int argc,char* args[]) {
 			if(SDL_Flip(sfScreen)==-1) return 1;
 
 			//limit the frame rate
-			if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND){
+			if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
+				printf("slowing!");
 				SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
 				tmFPS.start();
 			}
