@@ -1,6 +1,17 @@
 Changes to Shutengu!!
 =====================
 
+1.0 Jan 20 2012
+---------------
+* Done!
++ Added death notification
++ Added bomb notification
++ Added score penalty for dying
++ Implemented accelerating score: don't suck and gain score faster
+- Reduced score penalty for using a bomb
+* 1-up score requirement replaced with streak requirement
+* Bullets now slow down briefly when the player dies
+
 0.16.5 Jan 18 2012
 ------------------
 * Adjusted game over screen

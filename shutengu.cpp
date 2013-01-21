@@ -45,6 +45,8 @@ SDL_Surface *sfHighScore=NULL;
 SDL_Surface *sfRestart=NULL;
 SDL_Surface *sfOverBG=NULL;
 SDL_Surface *sfNewHigh=NULL;
+SDL_Surface *sfDeathOverlay=NULL;
+SDL_Surface *sfBombFlash=NULL;
 
 //the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
 Mix_Music *muBGM=NULL;
@@ -156,6 +158,8 @@ bool prepAssets() {
     sfHowTo=IMG_Load("img/howto.png");
     sfOverBG=IMG_Load("img/gameover.png");
     sfNewHigh=IMG_Load("img/newhigh.png");
+    sfDeathOverlay=IMG_Load("img/deathoverlay.png");
+    sfBombFlash=IMG_Load("img/bombflash.png");
     if(sfMenu==NULL||
 		sfShip==NULL||
 		sfBG==NULL||
@@ -164,7 +168,8 @@ bool prepAssets() {
 		sfWavesIcon==NULL||
 		sfHowTo==NULL||
 		sfOverBG==NULL||
-		sfNewHigh==NULL) return false;
+		sfNewHigh==NULL||
+		sfDeathOverlay==NULL) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
@@ -212,6 +217,8 @@ void cleanUp() {
     SDL_FreeSurface(sfRestart);
     SDL_FreeSurface(sfOverBG);
     SDL_FreeSurface(sfNewHigh);
+    SDL_FreeSurface(sfDeathOverlay);
+    SDL_FreeSurface(sfBombFlash);
 
     //free all audio
     Mix_FreeMusic(muBGM);
@@ -452,11 +459,14 @@ int iLife=3;            //life counts
 int iBomb=3;            //bomb counter
 int iWave=0;            //wave counter
 int iScore=0;           //score counter
+int iScoreAccel=1;
 bool quitMenu=false;    //maintains menu loop
 bool quitGame=false;    //maintains game loop
 bool quitOver=false;    //maintains game over loop
 bool quitAll=false;	    //allows player to replay
 bool newHighScore=false;//true if player has beaten the new high score
+bool diedRecently=false;
+bool bombedRecently=false;
 ship myship;            //user-controlled ship
 Timer tmTime;           //time until next wave
 Timer tmScore;          //frequency of score increase
@@ -530,7 +540,7 @@ bool useBomb(){
 			b[i].xVel=rand()%5-2;
 			b[i].yVel=rand()%2+1;
 		}
-		iScore-=50;
+		iScore-=25;
 		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
 	}
 	return true;
@@ -544,6 +554,9 @@ int main(int argc,char* args[]) {
     Timer tmFPS;            //controls frame rate
     Timer tmFPSUpd;         //total fps updates
     Timer tmDelta;          //track the change in time
+    Timer tmDeathOverlay;
+    Timer tmBombFlash;
+    Timer tmTimeAlive;
 
 	int frame=0;            //total frames past
 
@@ -626,6 +639,7 @@ int main(int argc,char* args[]) {
 				waveZero=false;
 				newBGM();
 				tmScore.start();
+				tmTimeAlive.start();
 			}
 			//setup phase is off
 			else if(tmTime.getTicks()>WAVE_LENGTH) {
@@ -634,14 +648,21 @@ int main(int argc,char* args[]) {
 				tmTime.start();
 			}
 
+			//score acceleration
+			if(tmTimeAlive.getTicks()>30000) iScoreAccel=13;
+			else if(tmTimeAlive.getTicks()>15000) iScoreAccel=6;
+			else if(tmTimeAlive.getTicks()>7500) iScoreAccel=3;
+			else if(tmTimeAlive.getTicks()>0) iScoreAccel=1;
+
 			//score timing
 			if(tmScore.getTicks()>250){
-				iScore++;
+				iScore+=iScoreAccel;
 				tmScore.start();
 			}
 
 			//1up timing (and avoid a math error)
-			if(iScore%360==0&&iScore!=0) {
+			if(tmTimeAlive.getTicks()>45000) {
+				tmTimeAlive.start();
 				iLife++;
 
 				//don't let player have too many lives
@@ -665,6 +686,9 @@ int main(int argc,char* args[]) {
 							break;
 						case SDLK_x:
 							if(useBomb()==false) return 1;
+							bombedRecently=true;
+							tmBombFlash.start();
+							tmTimeAlive.start();
 							break;
 						default:;
 					}
@@ -680,19 +704,19 @@ int main(int argc,char* args[]) {
 
 
 			//update screen data
-			for(i=0;i<=iMaxBul;i++){
-			}
 			myship.move(tmDelta.getTicks());    //update ship's position
 			tmDelta.start();                    //restart change of time timer
 			printb(0,0,sfBG,sfScreen);          //print background
 			myship.show();                      //print position to screen
+			if(diedRecently==true) printb(120,0,sfDeathOverlay,sfScreen,NULL);
+			if(bombedRecently==true) printb(120,0,sfBombFlash,sfScreen,NULL);
 
 			if(waveZero==true){					//reset bullets to original when looping game
-			printb(0,0,sfHowTo,sfScreen,NULL);
-			iMaxBul=-1;
+				printb(0,0,sfHowTo,sfScreen,NULL);
+				iMaxBul=-1;
 			}
-
             for(i=0; i<=iMaxBul; i++) {
+				//player has died
                 if(isCol(myship.hitbox,b[i].hitbox)) {
                     iLife--;
                     if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
@@ -700,7 +724,12 @@ int main(int argc,char* args[]) {
                     if(iLife==0) quitGame=true;
                     b[i].hitbox.x=rand()%420-120;
                     b[i].hitbox.y=0;
+                    iScore-=50;
+                    diedRecently=true;
+                    tmDeathOverlay.start();
+                    tmTimeAlive.start();
                 }
+
                 if(b[i].hitbox.x>515) b[i].hitbox.x=120;
                 if(b[i].hitbox.x<120) b[i].hitbox.x=515;        //compensate for bullet width
                 if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
@@ -713,6 +742,8 @@ int main(int argc,char* args[]) {
                 printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
             }
 
+            if(tmDeathOverlay.getTicks()>500) diedRecently=false;
+            if(tmBombFlash.getTicks()>250) bombedRecently=false;
 
 			//display all stats
 			renderHUD();
