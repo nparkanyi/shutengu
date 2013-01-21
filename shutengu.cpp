@@ -1,4 +1,5 @@
 //Jon Liu, Eugene Wang, Ms. Odecki, ICS3U, January 2013
+//DON'T RUN NETSUPPORT WHILE PLAYING THIS GAME!
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
 #include "SDL/SDL_mixer.h"
@@ -9,13 +10,13 @@
 #include <string>
 #include <sstream>
 
-int iMaxBul=-1;       //waits 1 period before starting to allow player to prepare
+int iMaxBul=-1;       //how many bullets are currently allowed
 
 //screen attributes
 const int SCREEN_WIDTH=640;
 const int SCREEN_HEIGHT=480;
 const int SCREEN_BPP=32;
-const int FRAMES_PER_SECOND=60;
+const int FRAMES_PER_SECOND=60;		//a ratio to control rate of movement
 
 //ship attributes
 const int SHIP_WIDTH=20;
@@ -23,87 +24,106 @@ const int SHIP_HEIGHT=20;
 const int SHIP_SPEED=200;
 
 //wave timer
-const int WAVE_LENGTH=30000;        //we must increase the frequency
+const int WAVE_LENGTH=30000;        //30 seconds
 
 //surfaces starring in this production
-SDL_Surface *sfMenu=NULL;
-SDL_Surface *sfShip=NULL;
-SDL_Surface *sfBG=NULL;
-SDL_Surface *sfScreen=NULL;
-SDL_Surface *sfMenuPrompt=NULL;
-SDL_Surface *sfBullet=NULL;
-SDL_Surface *sfScore=NULL;
-SDL_Surface *sfTime=NULL;
-SDL_Surface *sfBombs=NULL;
-SDL_Surface *sfBombsIcon=NULL;
-SDL_Surface *sfLives=NULL;
-SDL_Surface *sfLivesIcon=NULL;
+SDL_Surface *sfMenu=NULL;				//menu screen
+SDL_Surface *sfBG=NULL;					//game background screen
+SDL_Surface *sfOverBG=NULL;				//game over screen
+SDL_Surface *sfHowTo=NULL;				//how to play screen
+SDL_Surface *sfShip=NULL;				//image of the ship
+SDL_Surface *sfBullet=NULL;				//image of the bullet
+SDL_Surface *sfBombsIcon=NULL;			//bomb icon
+SDL_Surface *sfLivesIcon=NULL;			//lives icon
+SDL_Surface *sfWavesIcon=NULL;			//waves so far icon
+SDL_Surface *sfNewHigh=NULL;			//new highscore notification
+SDL_Surface *sfDeathOverlay=NULL;		//died notification
+SDL_Surface *sfBombFlash=NULL;			//bombed notification
+SDL_Surface *sfScreen=NULL;				//the screen: everything prints to this
+
+//text surfaces
+SDL_Surface *sfMenuPrompt=NULL;			//text to prompt to start
+SDL_Surface *sfRestart=NULL;			//text to prompt to restart
+SDL_Surface *sfScore=NULL;				//text of the score
+SDL_Surface *sfTime=NULL;				//text of the time remaining
+SDL_Surface *sfBombs=NULL;				//text of the bombs remaining
+SDL_Surface *sfLives=NULL;				//text of the lives remaining
 SDL_Surface *surfWaves=NULL;            //ha ha ha surf wave
-SDL_Surface *sfWavesIcon=NULL;
-SDL_Surface *sfHowTo=NULL;
-SDL_Surface *sfHighScore=NULL;
-SDL_Surface *sfRestart=NULL;
-SDL_Surface *sfOverBG=NULL;
-SDL_Surface *sfNewHigh=NULL;
-SDL_Surface *sfDeathOverlay=NULL;
-SDL_Surface *sfBombFlash=NULL;
+SDL_Surface *sfHighScore=NULL;			//text of the highscore
 
 //the award-winning soundtrawhile(SDL_PollEvent(&event)){ck
-Mix_Music *muBGM=NULL;
-Mix_Chunk *chDeath=NULL;
-Mix_Chunk *chGain=NULL;
-Mix_Chunk *chBomb=NULL;
+Mix_Music *muBGM=NULL;					//persistent background music
+Mix_Chunk *chDeath=NULL;				//death sound
+Mix_Chunk *chGain=NULL;					//1-up sound
+Mix_Chunk *chBomb=NULL;					//bomb sound
 
 //fonts and colours
-TTF_Font *fnMenu=NULL;
-TTF_Font *fnHUD=NULL;
-TTF_Font *fnHighScore=NULL;
-TTF_Font *fnFinalScore=NULL;
-SDL_Color clDefault= {0,0,0};
-SDL_Color clMenu= {0xff,0xff,0xff};
-SDL_Color clScore= {0xff,0xff,0xff};
-SDL_Color clHighScore= {0xcc,0xcc,0xcc};
-SDL_Color clWaves= {0xaf,0xdd,0xe9};
-SDL_Color clTime= {0xcc,0xff,0xaa};
-SDL_Color clBomb= {0xff,0xee,0xaa};
-SDL_Color clLives= {0xe9,0xaf,0xaf};
+TTF_Font *fnMenu=NULL;					//font for menu prompt
+TTF_Font *fnHUD=NULL;					//font for most of the game
+TTF_Font *fnHighScore=NULL;				//font for the highscore
+TTF_Font *fnFinalScore=NULL;			//font at game over
+SDL_Color clDefault= {0,0,0};			//black
+SDL_Color clMenu= {0xff,0xff,0xff};		//white
+SDL_Color clScore= {0xff,0xff,0xff};	//white
+SDL_Color clHighScore= {0xcc,0xcc,0xcc};//grey
+SDL_Color clWaves= {0xaf,0xdd,0xe9};	//blue
+SDL_Color clTime= {0xcc,0xff,0xaa};		//green
+SDL_Color clBomb= {0xff,0xee,0xaa};		//yellow
+SDL_Color clLives= {0xe9,0xaf,0xaf};	//red
 
 //event handler
 SDL_Event event;
 
+//changeable game data
+int iHighScore=0;       				//highscore variable
+int iLife=3;           					//lives left
+int iBomb=3;            				//bombs left
+int iWave=0;            				//waves so far
+int iScore=0;           				//score so far
+int iScoreAccel=1;						//score gain rate
+bool quitMenu=false;    				//maintains menu loop
+bool quitGame=false;    				//maintains game loop
+bool quitOver=false;    				//maintains game over loop
+bool quitAll=false;	    			//allows player to replay
+bool newHighScore=false;				//true if new high score
+bool diedRecently=false;				//player has been hit
+bool bombedRecently=false;				//player has used a bomb
+bool waveZero=true;     				//true if first wave fo the game
+
 //lists ship properties
-class ship {;
+class ship {
     public:
     	int xVel, yVel;                         //velocity
-        SDL_Rect hitbox;
+        SDL_Rect hitbox;						//collision space: nested strucure
         ship();                                 //initializes
-        void handleInput();                     //handles keyboard controls for the ship
-        void move(Uint32 deltaTicks);           //handles motion
-        void show();                            //renders ship
+        void handleInput();                    	//handles keyboard controls for the ship
+        void move(Uint32 deltaTicks);         	//handles motion
+        void show();                           //renders ship
 };
 
-struct bulletData {         //bullet structure
-    SDL_Rect hitbox;		//SDL_Rect is a structure; this is a nested structure
-    int xVel;
-    int yVel;
+struct bulletData {         					//bullet structure
+    SDL_Rect hitbox;							//collision space: nested structure
+    int xVel;									//velocity in X
+    int yVel;									//velocity in Y
 };
+
 //A STRUCTURE ARRAY!
 //it must be declared here in order for the bulletData data type to be valid
 bulletData b[200];
 
-//lists timer properties
+//timer properties
 class Timer {
     private:
-        int startTicks;     //time when it started
-        int pausedTicks;    //when paused: time past since start
-        bool paused;        //see isPaused
-        bool started;       //see isStarted
+        int startTicks;     	//time when it started
+        int pausedTicks;    	//when paused: time past since start
+        bool paused;       		//timer is on hold
+        bool started;     		//timer is running
 
     public:
-        Timer();            //initializes
-        void start();       //timer controls
-        void stop();
-        int getTicks();     //time past in the timer
+        Timer();          		//initializes
+        void start();     		//start running
+        void stop();			//stop running and set to zero
+        int getTicks();     	//timer's recorded time
 };
 
 //renders surfaces in specified coordinate
@@ -121,13 +141,14 @@ bool init() {
     //all SDL defaults or return false if error
     if(SDL_Init(SDL_INIT_EVERYTHING)==-1) return false;
 
+	//load program icon
 	SDL_Surface *sfAppIcon=IMG_Load("img/appico.png");
 	if(sfAppIcon==NULL) return false;
 	SDL_WM_SetIcon(sfAppIcon,NULL);
 	SDL_FreeSurface(sfAppIcon);
 
     //init screen or return false if error
-    sfScreen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_SWSURFACE);
+    sfScreen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_FULLSCREEN);
     if(sfScreen==NULL) return false;
 
     //init SDL_mixer or return false if error
@@ -136,7 +157,7 @@ bool init() {
     //init SDL_ttf or return false if error
     if(TTF_Init()==-1) return false;
 
-    SDL_WM_SetCaption("Shutengu!!",NULL); //set window caption
+    SDL_WM_SetCaption("Shutengu!!",NULL); 	//set window caption
     SDL_ShowCursor(SDL_DISABLE);            //hide mouse pointer
 
     //all is well if we reach this point
@@ -282,7 +303,7 @@ bool newBGM() {
     return true;
 }
 
-//sets values for all new bullets
+//gives coordinates to all new bullets
 void prepBullets() {
     int i;
     for(i=0; i<=iMaxBul; i++) {
@@ -293,26 +314,30 @@ void prepBullets() {
     }
 }
 
-//randomizes all starting bullets
+//change spawning bullet's position
 void randBullets() {
     int i;
     for(i=0; i<iMaxBul; i++) {
-        b[i].xVel=rand()%2+1;
-        b[i].yVel=rand()%2+1;
+        b[i].xVel=rand()%4+1;
+        b[i].yVel=rand()%4+1;
     }
 }
 
+//player levels up
 void nextWave() {
-    newBGM();
-    iMaxBul+=2;                       //after every wave increase, the number of bullets increases
-    b[iMaxBul].xVel=rand()%5-2;      //sets the new bullet parameters
-    b[iMaxBul].yVel=rand()%2+1;
-    b[iMaxBul-1].xVel=rand()%5-2;    //sets the new bullet parameters
-    b[iMaxBul-1].yVel=rand()%2+1;
+    iMaxBul+=2;                    		//increase bullet total
+
+    //new bullet velocities
+    b[iMaxBul].xVel=rand()%5-2;
+    b[iMaxBul].yVel=rand()%4+1;
+    b[iMaxBul-1].xVel=rand()%5-2;
+    b[iMaxBul-1].yVel=rand()%4+1;
+
+    //make new bullets
     prepBullets();
 }
 
-//checks collision
+//checks for collision
 bool isCol(SDL_Rect rectA,SDL_Rect rectB) {
     int leftA, leftB;
     int rightA, rightB;
@@ -330,10 +355,10 @@ bool isCol(SDL_Rect rectA,SDL_Rect rectB) {
     bottomB=rectB.y+rectB.h;
 
     //If any of the sides from A are outside of B
-    if(bottomA <= topB) return false;
-    if(topA >= bottomB) return false;
-    if(rightA <= leftB) return false;
-    if(leftA >= rightB) return false;
+    if(bottomA<=topB) return false;
+    if(topA>=bottomB) return false;
+    if(rightA<=leftB) return false;
+    if(leftA>=rightB) return false;
 
     //If none of the sides from A are outside B
     return true;
@@ -341,12 +366,12 @@ bool isCol(SDL_Rect rectA,SDL_Rect rectB) {
 
 //initializes ship's properties
 ship::ship() {
-    hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
-    hitbox.y=400;
+    hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;			//start at centre
+    hitbox.y=400;									//near the bottom
     hitbox.h=SHIP_HEIGHT;
     hitbox.w=SHIP_WIDTH;
-    xVel = 0;       //ship's initial velocity
-    yVel = 0;       //of course it's zero
+    xVel = 0;       								//ship's initial velocity
+    yVel = 0;       								//of course it's zero
 }
 
 //responds to keypresses involving the ship
@@ -393,25 +418,17 @@ void ship::handleInput() {
 }
 
 //controls ship movement
+//ship moves based on time passed, not by frames rendered
 void ship::move(Uint32 DeltaTicks) {
     //horizontal motion: stop the ship if out of bounds
-    //setting ship's movement to only be dependent on time
     hitbox.x+=xVel*(DeltaTicks/1000.f);
-    if(hitbox.x<120){
-        hitbox.x=120;
-    }
-    else if(hitbox.x+SHIP_WIDTH>520){
-        hitbox.x=500;
-    }
+    if(hitbox.x<120) hitbox.x=120;
+    else if(hitbox.x+SHIP_WIDTH>520) hitbox.x=500;
 
     //vertical motion: stop the ship if out of bounds
     hitbox.y+=yVel*(DeltaTicks/1000.f);
-    if(hitbox.y<0){
-        hitbox.y=0;
-    }
-    else if(hitbox.y+SHIP_HEIGHT>480){
-        hitbox.y=460;
-    }
+    if(hitbox.y<0) hitbox.y=0;
+    else if(hitbox.y+SHIP_HEIGHT>480) hitbox.y=460;
 }
 
 //renders the ship
@@ -421,25 +438,23 @@ void ship::show() {
 
 //init timer properties
 Timer::Timer() {
-    startTicks = 0;
-    pausedTicks = 0;
-    paused = false;
-    started = false;
+    startTicks=0;
+    pausedTicks=0;
+    paused=false;
+    started=false;
 }
 
 //starts the timer
 void Timer::start() {
-    started = true;             //it is now running
-    paused = false;             //it is not paused
-    startTicks = SDL_GetTicks();//time when timer was started
+    started=true;             //it is now running
+    paused=false;             //it is not paused
+    startTicks=SDL_GetTicks();//time when timer was started
 }
 void Timer::stop(){
-    //Stop the timer
-    started = false;
-
-    //Unpause the timer
-    paused = false;
+    started=false;			//Stop the timer
+    paused=false;			//Unpause the timer
 }
+
 //finds time since timer start
 int Timer::getTicks() {
     //run only if timer is active
@@ -452,41 +467,44 @@ int Timer::getTicks() {
     return 0;
 }
 
-//changeable game data
-int iHighScore=0;       //highscore variable
-bool waveZero=true;     //determines setup time
-int iLife=3;            //life counts
-int iBomb=3;            //bomb counter
-int iWave=0;            //wave counter
-int iScore=0;           //score counter
-int iScoreAccel=1;
-bool quitMenu=false;    //maintains menu loop
-bool quitGame=false;    //maintains game loop
-bool quitOver=false;    //maintains game over loop
-bool quitAll=false;	    //allows player to replay
-bool newHighScore=false;//true if player has beaten the new high score
-bool diedRecently=false;
-bool bombedRecently=false;
+
 ship myship;            //user-controlled ship
+
+//timers
+Timer tmFPS;            //controls frame rate
+Timer tmFPSUpd;         //total fps updates
+Timer tmDelta;          //track the change in time
+Timer tmDeathOverlay;	//how long to display death notification
+Timer tmBombFlash;		//how long to display bomb notification
+Timer tmTimeAlive;		//how long player has been alive
 Timer tmTime;           //time until next wave
 Timer tmScore;          //frequency of score increase
+Timer tmMusic;			//when to change music
 
+//reset game variables to ensure a clean replay
 void resetGame(){
-	tmTime.start();
-	waveZero=true;
+	tmTime.start();						//restart wave timer
+	tmScore.stop();						//stop counting score
+
+	//reset stats
 	iLife=3;
 	iBomb=3;
 	iWave=0;
 	iScore=0;
+	iMaxBul=-1;
+
+	//reset booleans
+	waveZero=true;
 	quitGame=false;
 	quitOver=false;
 	newHighScore=false;
-	iMaxBul=-1;
+
+	//reset ship properties
 	myship.xVel=0;
 	myship.yVel=0;
 	myship.hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
     myship.hitbox.y=400;
-	tmScore.stop();
+
     if(tmScore.getTicks()>250){
 		iScore++;
 		tmScore.start();
@@ -494,12 +512,13 @@ void resetGame(){
 
 }
 
+//display game stats
 void renderHUD() {
     //display the score
     std::stringstream sScore;
     sScore<<iScore;
     sfScore=TTF_RenderText_Shaded(fnHUD,sScore.str().c_str(),clScore,clDefault);
-    printb(7,2,sfScore,sfScreen);
+    printb(7,0,sfScore,sfScreen);
 
     //display the wave number
     std::stringstream sWaves;
@@ -530,37 +549,39 @@ void renderHUD() {
     printb(530,438,sfLivesIcon,sfScreen);
 }
 
+//the bomb: only works if enough bombs
 bool useBomb(){
 	int i;
 
 	if(iBomb>0) {
 		iBomb--;
+
+		//reset all bullets
 		for(i=0; i<=iMaxBul; i++) {
 			b[i].hitbox.y=-480;
 			b[i].xVel=rand()%5-2;
-			b[i].yVel=rand()%2+1;
+			b[i].yVel=rand()%4+1;
 		}
+
+		//score penalty
 		iScore-=25;
+
+		//relevant stat tracking
+		bombedRecently=true;
+        tmBombFlash.start();
+        tmTimeAlive.start();
+
+        //play sound
 		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
 	}
 	return true;
 }
 
+//finally here. Whew that's a lot of functions
 int main(int argc,char* args[]) {
     srand(time(NULL));  	//spin the wheel!
     int i;                  //loop counter
-
-    //timers
-    Timer tmFPS;            //controls frame rate
-    Timer tmFPSUpd;         //total fps updates
-    Timer tmDelta;          //track the change in time
-    Timer tmDeathOverlay;
-    Timer tmBombFlash;
-    Timer tmTimeAlive;
-
 	int frame=0;            //total frames past
-
-    //ship myship;            //user-controlled ship
 
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
@@ -569,7 +590,7 @@ int main(int argc,char* args[]) {
     //read and store the string of appropriate language
     FILE *pLang;
     char strLang[25];       //language string
-    if((pLang=fopen("text/gr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL) {
+    if((pLang=fopen("text/en.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL) {
         if(fgets(strLang,25,pLang)==NULL) return 1;
     }
     fclose(pLang);
@@ -620,12 +641,14 @@ int main(int argc,char* args[]) {
 		if(SDL_Flip(sfScreen)==-1) return 1;
 	}
 
+	//game is starting! set up everything!
 	tmTime.start();
 	tmFPS.start();
 	tmFPSUpd.start();
 	tmDelta.start();
+	tmMusic.start();
 
-//REPLAY LOOP
+	//REPLAY LOOP
 	while(quitAll==false){
 		randBullets();
 		//game runs here
@@ -648,6 +671,12 @@ int main(int argc,char* args[]) {
 				tmTime.start();
 			}
 
+			//change music after 90 seconds
+			if(tmMusic.getTicks()>90000){
+				newBGM();
+				tmMusic.start();
+			}
+
 			//score acceleration
 			if(tmTimeAlive.getTicks()>30000) iScoreAccel=13;
 			else if(tmTimeAlive.getTicks()>15000) iScoreAccel=6;
@@ -660,7 +689,7 @@ int main(int argc,char* args[]) {
 				tmScore.start();
 			}
 
-			//1up timing (and avoid a math error)
+			//1up timing
 			if(tmTimeAlive.getTicks()>45000) {
 				tmTimeAlive.start();
 				iLife++;
@@ -686,9 +715,6 @@ int main(int argc,char* args[]) {
 							break;
 						case SDLK_x:
 							if(useBomb()==false) return 1;
-							bombedRecently=true;
-							tmBombFlash.start();
-							tmTimeAlive.start();
 							break;
 						default:;
 					}
@@ -716,18 +742,18 @@ int main(int argc,char* args[]) {
 				iMaxBul=-1;
 			}
             for(i=0; i<=iMaxBul; i++) {
-				//player has died
+				//player has died: do all relevant tracking
                 if(isCol(myship.hitbox,b[i].hitbox)) {
                     iLife--;
-                    if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
                     iBomb=3;
+                    iScore-=50;
                     if(iLife==0) quitGame=true;
+                    diedRecently=true;
                     b[i].hitbox.x=rand()%420-120;
                     b[i].hitbox.y=0;
-                    iScore-=50;
-                    diedRecently=true;
                     tmDeathOverlay.start();
                     tmTimeAlive.start();
+                    if(Mix_PlayChannel(-1,chDeath,0)==-1) return 1;
                 }
 
                 if(b[i].hitbox.x>515) b[i].hitbox.x=120;
@@ -735,13 +761,14 @@ int main(int argc,char* args[]) {
                 if(b[i].hitbox.y>480) {                         //because collision is counted from sScore of the picture
                     b[i].hitbox.y=0;                            //so bulletwidth had to be subtracted
                     b[i].xVel=rand()%5-2;                      //bullet can travel left or right
-                    b[i].yVel=rand()%2+1;                       //can only travel down
+                    b[i].yVel=rand()%4+1;                       //can only travel down
                 }
                 b[i].hitbox.y+=b[i].yVel;
                 b[i].hitbox.x+=b[i].xVel;
                 printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
             }
 
+			//expiry dates for death and bomb notifications
             if(tmDeathOverlay.getTicks()>500) diedRecently=false;
             if(tmBombFlash.getTicks()>250) bombedRecently=false;
 
@@ -758,7 +785,7 @@ int main(int argc,char* args[]) {
 				tmFPS.start();
 			}
 
-			frame++;    //one frame passed
+			frame++;    //one frame has passed
 
 			//update this once per second
 			if(tmFPSUpd.getTicks()>1000) {
@@ -784,6 +811,7 @@ int main(int argc,char* args[]) {
 
 		//game over runs here
 		while(quitOver==false) {
+			//some key events
 			while(SDL_PollEvent(&event)) {
 				if(event.type==SDL_KEYDOWN) {
 					switch(event.key.keysym.sym) {
@@ -808,14 +836,16 @@ int main(int argc,char* args[]) {
 			finalScore<<iScore;
 			sfScore=TTF_RenderText_Blended(fnFinalScore,finalScore.str().c_str(),clMenu);
 
+			//display restart prompt
 			FILE *pRestart;
 			char strRestart[30];
-			if((pRestart=fopen("text/grr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
+			if((pRestart=fopen("text/enr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
 				if(fgets(strRestart,30,pRestart)==NULL) return 1;
 			}
 			fclose(pRestart);
 			sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
 
+			//print everything
 			printb(0,0,sfOverBG,sfScreen,NULL);
 			printb((SCREEN_WIDTH-sfRestart->w)/2,385,sfRestart,sfScreen,NULL);
 			printb((SCREEN_WIDTH-sfScore->w)/2,240,sfScore,sfScreen,NULL);

@@ -1,6 +1,13 @@
 Changes to Shutengu!!
 =====================
 
+1.0.1 Jan 21 2012
+---------------
++ Added thorough comments
+* Adjusted code formatting
+* Adjusted score position to be perfectly aligned
+* Music now changes every three waves instead of every one
+
 1.0 Jan 20 2012
 ---------------
 * Done!
