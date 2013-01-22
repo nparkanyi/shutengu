@@ -10,8 +10,6 @@
 #include <string>
 #include <sstream>
 
-int iMaxBul=-1;       //how many bullets are currently allowed
-
 //screen attributes
 const int SCREEN_WIDTH=640;
 const int SCREEN_HEIGHT=480;
@@ -75,6 +73,7 @@ SDL_Color clLives= {0xe9,0xaf,0xaf};	//red
 SDL_Event event;
 
 //changeable game data
+int iMaxBul=-1;       					//how many bullets are currently allowed
 int iHighScore=0;       				//highscore variable
 int iLife=3;           					//lives left
 int iBomb=3;            				//bombs left
