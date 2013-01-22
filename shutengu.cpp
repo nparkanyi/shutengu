@@ -91,13 +91,13 @@ bool waveZero=true;     				//true if first wave fo the game
 
 //lists ship properties
 class ship {
-    public:
-    	int xVel, yVel;                         //velocity
-        SDL_Rect hitbox;						//collision space: nested strucure
-        ship();                                 //initializes
-        void handleInput();                    	//handles keyboard controls for the ship
-        void move(Uint32 deltaTicks);         	//handles motion
-        void show();                           //renders ship
+public:
+    int xVel, yVel;                         //velocity
+    SDL_Rect hitbox;						//collision space: nested strucure
+    ship();                                 //initializes
+    void handleInput();                    	//handles keyboard controls for the ship
+    void move(Uint32 deltaTicks);         	//handles motion
+    void show();                           //renders ship
 };
 
 struct bulletData {         					//bullet structure
@@ -112,17 +112,17 @@ bulletData b[200];
 
 //timer properties
 class Timer {
-    private:
-        int startTicks;     	//time when it started
-        int pausedTicks;    	//when paused: time past since start
-        bool paused;       		//timer is on hold
-        bool started;     		//timer is running
+private:
+    int startTicks;     	//time when it started
+    int pausedTicks;    	//when paused: time past since start
+    bool paused;       		//timer is on hold
+    bool started;     		//timer is running
 
-    public:
-        Timer();          		//initializes
-        void start();     		//start running
-        void stop();			//stop running and set to zero
-        int getTicks();     	//timer's recorded time
+public:
+    Timer();          		//initializes
+    void start();     		//start running
+    void stop();			//stop running and set to zero
+    int getTicks();     	//timer's recorded time
 };
 
 //renders surfaces in specified coordinate
@@ -140,11 +140,11 @@ bool init() {
     //all SDL defaults or return false if error
     if(SDL_Init(SDL_INIT_EVERYTHING)==-1) return false;
 
-	//load program icon
-	SDL_Surface *sfAppIcon=IMG_Load("img/appico.png");
-	if(sfAppIcon==NULL) return false;
-	SDL_WM_SetIcon(sfAppIcon,NULL);
-	SDL_FreeSurface(sfAppIcon);
+    //load program icon
+    SDL_Surface *sfAppIcon=IMG_Load("img/appico.png");
+    if(sfAppIcon==NULL) return false;
+    SDL_WM_SetIcon(sfAppIcon,NULL);
+    SDL_FreeSurface(sfAppIcon);
 
     //init screen or return false if error
     sfScreen=SDL_SetVideoMode(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_BPP,SDL_FULLSCREEN);
@@ -181,15 +181,15 @@ bool prepAssets() {
     sfDeathOverlay=IMG_Load("img/deathoverlay.png");
     sfBombFlash=IMG_Load("img/bombflash.png");
     if(sfMenu==NULL||
-		sfShip==NULL||
-		sfBG==NULL||
-		sfBullet==NULL||
-		sfLivesIcon==NULL||
-		sfWavesIcon==NULL||
-		sfHowTo==NULL||
-		sfOverBG==NULL||
-		sfNewHigh==NULL||
-		sfDeathOverlay==NULL) return false;
+            sfShip==NULL||
+            sfBG==NULL||
+            sfBullet==NULL||
+            sfLivesIcon==NULL||
+            sfWavesIcon==NULL||
+            sfHowTo==NULL||
+            sfOverBG==NULL||
+            sfNewHigh==NULL||
+            sfDeathOverlay==NULL) return false;
 
     //load audio or return false if error
     muBGM=Mix_LoadMUS("audio/hahaha.wav");    //menu music by default
@@ -197,9 +197,9 @@ bool prepAssets() {
     chBomb=Mix_LoadWAV("audio/boom.wav");
     chDeath=Mix_LoadWAV("audio/death.wav");
     if(muBGM==NULL||
-		chGain==NULL||
-		chBomb==NULL||
-		chDeath==NULL) return false;
+            chGain==NULL||
+            chBomb==NULL||
+            chDeath==NULL) return false;
 
     //open fonts or return false if error
     fnMenu=TTF_OpenFont("envy.ttf",24);
@@ -207,9 +207,9 @@ bool prepAssets() {
     fnHighScore=TTF_OpenFont("envy.ttf",24);
     fnFinalScore=TTF_OpenFont("envy.ttf",64);
     if(fnMenu==NULL||
-		fnHUD==NULL||
-		fnHighScore==NULL||
-		fnFinalScore==NULL) return false;
+            fnHUD==NULL||
+            fnHighScore==NULL||
+            fnFinalScore==NULL) return false;
 
     //all is well
     return true;
@@ -265,34 +265,35 @@ bool newBGM() {
 
     //randomly picks new music form this pool
     switch(rMus) {
-        case 1:
-            muBGM=Mix_LoadMUS("audio/arps.wav");
-            break;
-        case 2:
-            muBGM=Mix_LoadMUS("audio/chase1.wav");
-            break;
-        case 3:
-            muBGM=Mix_LoadMUS("audio/chase2.wav");
-            break;
-        case 4:
-            muBGM=Mix_LoadMUS("audio/gacd.wav");
-            break;
-        case 5:
-            muBGM=Mix_LoadMUS("audio/train.wav");
-            break;
-        case 6:
-            muBGM=Mix_LoadMUS("audio/hey.wav");
-            break;
-        case 7:
-            muBGM=Mix_LoadMUS("audio/juice.wav");
-            break;
-        case 8:
-            muBGM=Mix_LoadMUS("audio/partybell.wav");
-            break;
-        case 9:
-            muBGM=Mix_LoadMUS("audio/pounds.wav");
-            break;
-		default:;
+    case 1:
+        muBGM=Mix_LoadMUS("audio/arps.wav");
+        break;
+    case 2:
+        muBGM=Mix_LoadMUS("audio/chase1.wav");
+        break;
+    case 3:
+        muBGM=Mix_LoadMUS("audio/chase2.wav");
+        break;
+    case 4:
+        muBGM=Mix_LoadMUS("audio/gacd.wav");
+        break;
+    case 5:
+        muBGM=Mix_LoadMUS("audio/train.wav");
+        break;
+    case 6:
+        muBGM=Mix_LoadMUS("audio/hey.wav");
+        break;
+    case 7:
+        muBGM=Mix_LoadMUS("audio/juice.wav");
+        break;
+    case 8:
+        muBGM=Mix_LoadMUS("audio/partybell.wav");
+        break;
+    case 9:
+        muBGM=Mix_LoadMUS("audio/pounds.wav");
+        break;
+    default:
+        ;
     }
 
     //play it or return false if error
@@ -380,38 +381,40 @@ void ship::handleInput() {
     //key is pressed
     if(event.type==SDL_KEYDOWN) {
         switch(event.key.keysym.sym) {
-            case SDLK_UP:
-                yVel-=SHIP_SPEED-73;
-                break;
-            case SDLK_DOWN:
-                yVel+=SHIP_SPEED;
-                break;
-            case SDLK_LEFT:
-                xVel-=SHIP_SPEED-73;
-                break;
-            case SDLK_RIGHT:
-                xVel+=SHIP_SPEED;
-                break;
-			default:;
+        case SDLK_UP:
+            yVel-=SHIP_SPEED-73;
+            break;
+        case SDLK_DOWN:
+            yVel+=SHIP_SPEED;
+            break;
+        case SDLK_LEFT:
+            xVel-=SHIP_SPEED-73;
+            break;
+        case SDLK_RIGHT:
+            xVel+=SHIP_SPEED;
+            break;
+        default:
+            ;
         }
     }
 
     //key is released
     if(event.type==SDL_KEYUP) {
         switch(event.key.keysym.sym) {
-            case SDLK_UP:
-                yVel +=SHIP_SPEED-73;
-                break;
-            case SDLK_DOWN:
-                yVel -=SHIP_SPEED;
-                break;
-            case SDLK_LEFT:
-                xVel +=SHIP_SPEED-73;
-                break;
-            case SDLK_RIGHT:
-                xVel -=SHIP_SPEED;
-                break;
-			default:;
+        case SDLK_UP:
+            yVel +=SHIP_SPEED-73;
+            break;
+        case SDLK_DOWN:
+            yVel -=SHIP_SPEED;
+            break;
+        case SDLK_LEFT:
+            xVel +=SHIP_SPEED-73;
+            break;
+        case SDLK_RIGHT:
+            xVel -=SHIP_SPEED;
+            break;
+        default:
+            ;
         }
     }
 }
@@ -449,7 +452,7 @@ void Timer::start() {
     paused=false;             //it is not paused
     startTicks=SDL_GetTicks();//time when timer was started
 }
-void Timer::stop(){
+void Timer::stop() {
     started=false;			//Stop the timer
     paused=false;			//Unpause the timer
 }
@@ -481,33 +484,33 @@ Timer tmScore;          //frequency of score increase
 Timer tmMusic;			//when to change music
 
 //reset game variables to ensure a clean replay
-void resetGame(){
-	tmTime.start();						//restart wave timer
-	tmScore.stop();						//stop counting score
+void resetGame() {
+    tmTime.start();						//restart wave timer
+    tmScore.stop();						//stop counting score
 
-	//reset stats
-	iLife=3;
-	iBomb=3;
-	iWave=0;
-	iScore=0;
-	iMaxBul=-1;
+    //reset stats
+    iLife=3;
+    iBomb=3;
+    iWave=0;
+    iScore=0;
+    iMaxBul=-1;
 
-	//reset booleans
-	waveZero=true;
-	quitGame=false;
-	quitOver=false;
-	newHighScore=false;
+    //reset booleans
+    waveZero=true;
+    quitGame=false;
+    quitOver=false;
+    newHighScore=false;
 
-	//reset ship properties
-	myship.xVel=0;
-	myship.yVel=0;
-	myship.hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
+    //reset ship properties
+    myship.xVel=0;
+    myship.yVel=0;
+    myship.hitbox.x=(SCREEN_WIDTH-SHIP_WIDTH)/2;
     myship.hitbox.y=400;
 
-    if(tmScore.getTicks()>250){
-		iScore++;
-		tmScore.start();
-	}
+    if(tmScore.getTicks()>250) {
+        iScore++;
+        tmScore.start();
+    }
 
 }
 
@@ -549,38 +552,38 @@ void renderHUD() {
 }
 
 //the bomb: only works if enough bombs
-bool useBomb(){
-	int i;
+bool useBomb() {
+    int i;
 
-	if(iBomb>0) {
-		iBomb--;
+    if(iBomb>0) {
+        iBomb--;
 
-		//reset all bullets
-		for(i=0; i<=iMaxBul; i++) {
-			b[i].hitbox.y=-480;
-			b[i].xVel=rand()%5-2;
-			b[i].yVel=rand()%4+1;
-		}
+        //reset all bullets
+        for(i=0; i<=iMaxBul; i++) {
+            b[i].hitbox.y=-480;
+            b[i].xVel=rand()%5-2;
+            b[i].yVel=rand()%4+1;
+        }
 
-		//score penalty
-		iScore-=25;
+        //score penalty
+        iScore-=25;
 
-		//relevant stat tracking
-		bombedRecently=true;
+        //relevant stat tracking
+        bombedRecently=true;
         tmBombFlash.start();
         tmTimeAlive.start();
 
         //play sound
-		if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
-	}
-	return true;
+        if(Mix_PlayChannel(-1,chBomb,0)==-1) return false;
+    }
+    return true;
 }
 
 //finally here. Whew that's a lot of functions
 int main(int argc,char* args[]) {
     srand(time(NULL));  	//spin the wheel!
     int i;                  //loop counter
-	int frame=0;            //total frames past
+    int frame=0;            //total frames past
 
     if(init()==false) return 1;
     if(prepAssets()==false) return 1;
@@ -595,153 +598,155 @@ int main(int argc,char* args[]) {
     fclose(pLang);
     sfMenuPrompt=TTF_RenderText_Blended(fnMenu,strLang,clMenu);
 
-	//read and store current highscore
-	FILE *pHighScoreR;
-	char strHighScore[10];
-	if((pHighScoreR=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
-		if(fgets(strHighScore,10,pHighScoreR)==NULL) return 1;
-	}
-	fclose(pHighScoreR);
-	sfHighScore=TTF_RenderText_Shaded(fnHighScore,strHighScore,clHighScore,clDefault);
-	iHighScore=atoi(strHighScore);		//string contents as an int
+    //read and store current highscore
+    FILE *pHighScoreR;
+    char strHighScore[10];
+    if((pHighScoreR=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL) {
+        if(fgets(strHighScore,10,pHighScoreR)==NULL) return 1;
+    }
+    fclose(pHighScoreR);
+    sfHighScore=TTF_RenderText_Shaded(fnHighScore,strHighScore,clHighScore,clDefault);
+    iHighScore=atoi(strHighScore);		//string contents as an int
 
-	//menu runs here
-	while(quitMenu==false) {
-		//display menu
-		printb(0,0,sfMenu,sfScreen);
-		printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,315,sfMenuPrompt,sfScreen);
-		//menu-only key controls
-		while(SDL_PollEvent(&event)) {
-			if(event.type==SDL_KEYDOWN) {
-				switch(event.key.keysym.sym) {
-					case SDLK_RETURN:
-						quitMenu=true;
-						break;
-					case SDLK_ESCAPE:
-						quitMenu=true;
-						quitGame=true;
-						quitOver=true;
-						quitAll=true;
-						break;
-					default:;
-				}
-			}
+    //menu runs here
+    while(quitMenu==false) {
+        //display menu
+        printb(0,0,sfMenu,sfScreen);
+        printb((SCREEN_WIDTH-sfMenuPrompt->w)/2,315,sfMenuPrompt,sfScreen);
+        //menu-only key controls
+        while(SDL_PollEvent(&event)) {
+            if(event.type==SDL_KEYDOWN) {
+                switch(event.key.keysym.sym) {
+                case SDLK_RETURN:
+                    quitMenu=true;
+                    break;
+                case SDLK_ESCAPE:
+                    quitMenu=true;
+                    quitGame=true;
+                    quitOver=true;
+                    quitAll=true;
+                    break;
+                default:
+                    ;
+                }
+            }
 
-			//if the window gets X'd
-			if(event.type==SDL_QUIT) {
-				quitMenu=true;          //quit the menu
-				quitGame=true;          //skip the game
-				quitOver=true;
-				quitAll=true;
-			}
-		}
+            //if the window gets X'd
+            if(event.type==SDL_QUIT) {
+                quitMenu=true;          //quit the menu
+                quitGame=true;          //skip the game
+                quitOver=true;
+                quitAll=true;
+            }
+        }
 
-		//refresh the screen
-		if(SDL_Flip(sfScreen)==-1) return 1;
-	}
+        //refresh the screen
+        if(SDL_Flip(sfScreen)==-1) return 1;
+    }
 
-	//game is starting! set up everything!
-	tmTime.start();
-	tmFPS.start();
-	tmFPSUpd.start();
-	tmDelta.start();
-	tmMusic.start();
+    //game is starting! set up everything!
+    tmTime.start();
+    tmFPS.start();
+    tmFPSUpd.start();
+    tmDelta.start();
+    tmMusic.start();
 
-	//REPLAY LOOP
-	while(quitAll==false){
-		randBullets();
-		//game runs here
-		while(quitGame==false) {
-			//once wave time is up: level up and restart wave timer
-			//setup phase is active
-			if(waveZero==true&&tmTime.getTicks()>10000) {
-				iWave++;
-				nextWave();
-				tmTime.start();
-				waveZero=false;
-				newBGM();
-				tmScore.start();
-				tmTimeAlive.start();
-			}
-			//setup phase is off
-			else if(tmTime.getTicks()>WAVE_LENGTH) {
-				iWave++;
-				nextWave();
-				tmTime.start();
-			}
+    //REPLAY LOOP
+    while(quitAll==false) {
+        randBullets();
+        //game runs here
+        while(quitGame==false) {
+            //once wave time is up: level up and restart wave timer
+            //setup phase is active
+            if(waveZero==true&&tmTime.getTicks()>10000) {
+                iWave++;
+                nextWave();
+                tmTime.start();
+                waveZero=false;
+                newBGM();
+                tmScore.start();
+                tmTimeAlive.start();
+            }
+            //setup phase is off
+            else if(tmTime.getTicks()>WAVE_LENGTH) {
+                iWave++;
+                nextWave();
+                tmTime.start();
+            }
 
-			//change music after 90 seconds
-			if(tmMusic.getTicks()>90000){
-				newBGM();
-				tmMusic.start();
-			}
+            //change music after 90 seconds
+            if(tmMusic.getTicks()>90000) {
+                newBGM();
+                tmMusic.start();
+            }
 
-			//score acceleration
-			if(tmTimeAlive.getTicks()>30000) iScoreAccel=13;
-			else if(tmTimeAlive.getTicks()>15000) iScoreAccel=6;
-			else if(tmTimeAlive.getTicks()>7500) iScoreAccel=3;
-			else if(tmTimeAlive.getTicks()>0) iScoreAccel=1;
+            //score acceleration
+            if(tmTimeAlive.getTicks()>30000) iScoreAccel=13;
+            else if(tmTimeAlive.getTicks()>15000) iScoreAccel=6;
+            else if(tmTimeAlive.getTicks()>7500) iScoreAccel=3;
+            else if(tmTimeAlive.getTicks()>0) iScoreAccel=1;
 
-			//score timing
-			if(tmScore.getTicks()>250){
-				iScore+=iScoreAccel;
-				tmScore.start();
-			}
+            //score timing
+            if(tmScore.getTicks()>250) {
+                iScore+=iScoreAccel;
+                tmScore.start();
+            }
 
-			//1up timing
-			if(tmTimeAlive.getTicks()>45000) {
-				tmTimeAlive.start();
-				iLife++;
+            //1up timing
+            if(tmTimeAlive.getTicks()>45000) {
+                tmTimeAlive.start();
+                iLife++;
 
-				//don't let player have too many lives
-				//if 1up is allowed, play sound
-				if(iLife>5)iLife=5;
-				else if(Mix_PlayChannel(-1,chGain,0)==-1) return 1;
-			}
+                //don't let player have too many lives
+                //if 1up is allowed, play sound
+                if(iLife>5)iLife=5;
+                else if(Mix_PlayChannel(-1,chGain,0)==-1) return 1;
+            }
 
-			//while there's science to do
-			while(SDL_PollEvent(&event)) {
-				//ship controls
-				myship.handleInput();
+            //while there's science to do
+            while(SDL_PollEvent(&event)) {
+                //ship controls
+                myship.handleInput();
 
-				//other controls
-				if(event.type==SDL_KEYDOWN) {
-					switch(event.key.keysym.sym) {
-						case SDLK_ESCAPE:
-							quitGame=true;
-							quitOver=true;
-							quitAll=true;
-							break;
-						case SDLK_x:
-							if(useBomb()==false) return 1;
-							break;
-						default:;
-					}
-				}
+                //other controls
+                if(event.type==SDL_KEYDOWN) {
+                    switch(event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        quitGame=true;
+                        quitOver=true;
+                        quitAll=true;
+                        break;
+                    case SDLK_x:
+                        if(useBomb()==false) return 1;
+                        break;
+                    default:
+                        ;
+                    }
+                }
 
-				//if the window gets X'd
-				if(event.type == SDL_QUIT) {
-					quitGame = true;
-					quitOver=true;
-					quitAll=true;
-				}
-			}
+                //if the window gets X'd
+                if(event.type == SDL_QUIT) {
+                    quitGame = true;
+                    quitOver=true;
+                    quitAll=true;
+                }
+            }
 
 
-			//update screen data
-			myship.move(tmDelta.getTicks());    //update ship's position
-			tmDelta.start();                    //restart change of time timer
-			printb(0,0,sfBG,sfScreen);          //print background
-			myship.show();                      //print position to screen
-			if(diedRecently==true) printb(120,0,sfDeathOverlay,sfScreen,NULL);
-			if(bombedRecently==true) printb(120,0,sfBombFlash,sfScreen,NULL);
+            //update screen data
+            myship.move(tmDelta.getTicks());    //update ship's position
+            tmDelta.start();                    //restart change of time timer
+            printb(0,0,sfBG,sfScreen);          //print background
+            myship.show();                      //print position to screen
+            if(diedRecently==true) printb(120,0,sfDeathOverlay,sfScreen,NULL);
+            if(bombedRecently==true) printb(120,0,sfBombFlash,sfScreen,NULL);
 
-			if(waveZero==true){					//reset bullets to original when looping game
-				printb(0,0,sfHowTo,sfScreen,NULL);
-				iMaxBul=-1;
-			}
+            if(waveZero==true) {					//reset bullets to original when looping game
+                printb(0,0,sfHowTo,sfScreen,NULL);
+                iMaxBul=-1;
+            }
             for(i=0; i<=iMaxBul; i++) {
-				//player has died: do all relevant tracking
+                //player has died: do all relevant tracking
                 if(isCol(myship.hitbox,b[i].hitbox)) {
                     iLife--;
                     iBomb=3;
@@ -767,98 +772,101 @@ int main(int argc,char* args[]) {
                 printb(b[i].hitbox.x,b[i].hitbox.y,sfBullet,sfScreen,NULL);
             }
 
-			//expiry dates for death and bomb notifications
+            //expiry dates for death and bomb notifications
             if(tmDeathOverlay.getTicks()>500) diedRecently=false;
             if(tmBombFlash.getTicks()>250) bombedRecently=false;
 
-			//display all stats
-			renderHUD();
-			printb(7,50,sfHighScore,sfScreen,NULL);
+            //display all stats
+            renderHUD();
+            printb(7,50,sfHighScore,sfScreen,NULL);
 
-			//refresh the screen
-			if(SDL_Flip(sfScreen)==-1) return 1;
+            //refresh the screen
+            if(SDL_Flip(sfScreen)==-1) return 1;
 
-			//limit the frame rate
-			if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
-				SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
-				tmFPS.start();
-			}
+            //limit the frame rate
+            if(tmFPS.getTicks()<1000/FRAMES_PER_SECOND) {
+                SDL_Delay((1000/FRAMES_PER_SECOND)-tmFPS.getTicks());
+                tmFPS.start();
+            }
 
-			frame++;    //one frame has passed
+            frame++;    //one frame has passed
 
-			//update this once per second
-			if(tmFPSUpd.getTicks()>1000) {
-				std::stringstream newCaption;
-				newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
-				SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
-				tmFPSUpd.start();         //restart for the next one-second wait
-			}
-		}
+            //update this once per second
+            if(tmFPSUpd.getTicks()>1000) {
+                std::stringstream newCaption;
+                newCaption<<frame/(tmFPS.getTicks()/1000.f)<<" fps";
+                SDL_WM_SetCaption(newCaption.str().c_str(),NULL);
+                tmFPSUpd.start();         //restart for the next one-second wait
+            }
+        }
 
-		//store new high score, if there is one
-		if(iScore>iHighScore){
-			FILE *pHighScoreW;
-			if((pHighScoreW=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","w"))!=NULL){
-				if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
-			}
-			fclose(pHighScoreW);
-			newHighScore=true;
-		}
+        //store new high score, if there is one
+        if(iScore>iHighScore) {
+            FILE *pHighScoreW;
+            if((pHighScoreW=fopen("text/highscore.WhyCantIHoldAllTheseFileExtensions","w"))!=NULL) {
+                if(fprintf(pHighScoreW,"%d",iScore)==0) return 1;
+            }
+            fclose(pHighScoreW);
+            newHighScore=true;
+        }
 
-		//stop playing music
-		Mix_HaltMusic();
+        //stop playing music
+        Mix_HaltMusic();
 
-		//game over runs here
-		while(quitOver==false) {
-			//some key events
-			while(SDL_PollEvent(&event)) {
-				if(event.type==SDL_KEYDOWN) {
-					switch(event.key.keysym.sym) {
-						case SDLK_RETURN: quitOver=true; break;
-						case SDLK_ESCAPE:
-							quitOver=true;
-							quitAll=true;
-							break;
-						default:;
-					}
-				}
+        //game over runs here
+        while(quitOver==false) {
+            //some key events
+            while(SDL_PollEvent(&event)) {
+                if(event.type==SDL_KEYDOWN) {
+                    switch(event.key.keysym.sym) {
+                    case SDLK_RETURN:
+                        quitOver=true;
+                        break;
+                    case SDLK_ESCAPE:
+                        quitOver=true;
+                        quitAll=true;
+                        break;
+                    default:
+                        ;
+                    }
+                }
 
-				//if the window gets X'd
-				if(event.type == SDL_QUIT){
-					quitOver=true;
-					quitAll=true;
-				}
-			}
+                //if the window gets X'd
+                if(event.type == SDL_QUIT) {
+                    quitOver=true;
+                    quitAll=true;
+                }
+            }
 
-			//end surfaces
-			std::stringstream finalScore;
-			finalScore<<iScore;
-			sfScore=TTF_RenderText_Blended(fnFinalScore,finalScore.str().c_str(),clMenu);
+            //end surfaces
+            std::stringstream finalScore;
+            finalScore<<iScore;
+            sfScore=TTF_RenderText_Blended(fnFinalScore,finalScore.str().c_str(),clMenu);
 
-			//display restart prompt
-			FILE *pRestart;
-			char strRestart[30];
-			if((pRestart=fopen("text/enr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL){
-				if(fgets(strRestart,30,pRestart)==NULL) return 1;
-			}
-			fclose(pRestart);
-			sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
+            //display restart prompt
+            FILE *pRestart;
+            char strRestart[30];
+            if((pRestart=fopen("text/enr.WhyCantIHoldAllTheseFileExtensions","r"))!=NULL) {
+                if(fgets(strRestart,30,pRestart)==NULL) return 1;
+            }
+            fclose(pRestart);
+            sfRestart=TTF_RenderText_Blended(fnMenu,strRestart,clScore);
 
-			//print everything
-			printb(0,0,sfOverBG,sfScreen,NULL);
-			printb((SCREEN_WIDTH-sfRestart->w)/2,385,sfRestart,sfScreen,NULL);
-			printb((SCREEN_WIDTH-sfScore->w)/2,240,sfScore,sfScreen,NULL);
-			if(newHighScore==true)	printb(430,280,sfNewHigh,sfScreen,NULL);
+            //print everything
+            printb(0,0,sfOverBG,sfScreen,NULL);
+            printb((SCREEN_WIDTH-sfRestart->w)/2,385,sfRestart,sfScreen,NULL);
+            printb((SCREEN_WIDTH-sfScore->w)/2,240,sfScore,sfScreen,NULL);
+            if(newHighScore==true)	printb(430,280,sfNewHigh,sfScreen,NULL);
 
-			//refresh the screen
-			if(SDL_Flip(sfScreen)==-1) return 1;
+            //refresh the screen
+            if(SDL_Flip(sfScreen)==-1) return 1;
 
-			SDL_WM_SetCaption("Shutengu!!",NULL);
-		}
+            SDL_WM_SetCaption("Shutengu!!",NULL);
+        }
 
-		//reset loop conditions to allow replaying
-		resetGame();
-	}
+        //reset loop conditions to allow replaying
+        resetGame();
+    }
     //user has now quit
     cleanUp();
 
