@@ -11,3 +11,5 @@ Features
 * Infinitely increasing difficulty
 * Time pressure
 * SDL, not that plebian Allegro
+
+Requires SDL1.2, SDL_mixer, SDL_image, and SDL_ttf.
